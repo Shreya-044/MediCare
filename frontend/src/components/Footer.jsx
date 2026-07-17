@@ -47,32 +47,18 @@ const footerLinks = [
 
 export default function Footer() {
   return (
-    <footer className="bg-teal-800 text-white mt-20">
-      <div className="max-w-7xl mx-auto px-8 py-14">
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
-          {footerLinks.map((section) => (
-            <div key={section.title}>
-              <h3 className="font-bold text-sm tracking-wider mb-5">
-                {section.title}
-              </h3>
-
-              <ul className="space-y-3 text-sm text-teal-100">
-                {section.links.map((link) => (
-                  <li
-                    key={link}
-                    className="hover:text-white cursor-pointer transition"
-                  >
-                    {link}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-
-        <div className="border-t border-teal-600 mt-10 pt-6 text-center text-sm text-teal-200">
-          © {new Date().getFullYear()} MediCare. All Rights Reserved.
-        </div>
+    <footer className="bg-[#0b645b] text-white mt-auto">
+      <div className="max-w-7xl mx-auto px-10 py-16 grid grid-cols-2 md:grid-cols-5 gap-8">
+        {footerLinks.map((section) => (
+          <div key={section.title}>
+            <h3 className="font-black text-[12px] uppercase tracking-widest mb-5">{section.title}</h3>
+            <ul className="space-y-3 text-[12px] text-teal-200">
+              {section.links.map((link) => (
+                <li key={link} className="cursor-pointer hover:text-white transition">{link}</li>
+              ))}
+            </ul>
+          </div>
+        ))}
       </div>
     </footer>
   );

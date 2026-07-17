@@ -1,77 +1,62 @@
-import { Link } from "react-router-dom";
-import { FaUserCircle } from "react-icons/fa";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { FiUser, FiSettings, FiLogOut, FiUserCheck } from "react-icons/fi";
 
-const Navbar = () => {
+const Navbar = ({ isLoggedIn, setIsLoggedIn, userName, activeTab, setActiveTab }) => {
+  const [dropdown, setDropdown] = useState(false);
+  const navigate = useNavigate();
+  const tabs = ["Home", "My Appointments", "My Reports"];
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setDropdown(false);
+    navigate("/");
+  };
+
   return (
-    <header className="sticky top-0 z-50 w-full bg-white border-b border-gray-200 shadow-sm">
-      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6 lg:px-10">
-        
-        {/* Logo */}
-        <Link to="/" className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-teal-700 text-xl font-bold text-white">
-            M
-          </div>
-
-          <div>
-            <h1 className="text-xl font-bold text-teal-700">
-              MediCare
-            </h1>
-            <p className="-mt-1 text-xs text-gray-500">
-              Healthcare Portal
-            </p>
-          </div>
-        </Link>
-
-        {/* Navigation */}
-        <nav className="hidden items-center gap-8 md:flex">
-          <Link
-            to="/"
-            className="font-medium text-gray-700 transition hover:text-teal-700"
-          >
-            Home
-          </Link>
-
-          <Link
-            to="/doctors"
-            className="font-medium text-gray-700 transition hover:text-teal-700"
-          >
-            Doctors
-          </Link>
-
-          <Link
-            to="/specialists"
-            className="font-medium text-gray-700 transition hover:text-teal-700"
-          >
-            Specialists
-          </Link>
-
-          <Link
-            to="/about"
-            className="font-medium text-gray-700 transition hover:text-teal-700"
-          >
-            About
-          </Link>
-
-          <Link
-            to="/contact"
-            className="font-medium text-gray-700 transition hover:text-teal-700"
-          >
-            Contact
-          </Link>
-        </nav>
-
-        {/* Right Side */}
-        <div className="flex items-center gap-4">
-          <button className="hidden rounded-lg border border-teal-700 px-5 py-2 font-medium text-teal-700 transition hover:bg-teal-700 hover:text-white md:block">
-            Login
-          </button>
-
-          <button className="rounded-lg bg-teal-700 px-5 py-2 font-medium text-white transition hover:bg-teal-800">
-            Sign Up
-          </button>
-
-          <FaUserCircle className="hidden text-3xl text-teal-700 md:block" />
+    <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b-2 border-gray-100">
+      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-10">
+        <div className="flex flex-col cursor-pointer" onClick={() => navigate("/")}>
+          <h1 className="text-xl font-black text-[#0b645b]">MediCare Portals</h1>
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">Doctor Appointment</p>
         </div>
+
+        {isLoggedIn ? (
+          <>
+            <div className="flex gap-1 bg-gray-100 p-1 rounded-full">
+              {tabs.map(tab => (
+                <button 
+                  key={tab} 
+                  onClick={() => { setActiveTab(tab); navigate("/dashboard"); }}
+                  className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition ${
+                    activeTab === tab ? "bg-[#0b645b] text-white shadow-md" : "text-gray-500 hover:text-gray-900"
+                  }`}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+            <div className="relative">
+              <button onClick={() => setDropdown(!dropdown)} className="flex items-center gap-2 p-1 bg-gray-100 rounded-full hover:bg-gray-200 transition">
+                <div className="bg-[#0b645b] p-2 rounded-full"><FiUserCheck className="text-white text-sm" /></div>
+                <span className="text-xs font-bold text-[#0b645b] pr-3">{userName}</span>
+              </button>
+              {dropdown && (
+                <div className="absolute right-0 mt-3 w-48 bg-white rounded-3xl shadow-2xl border border-gray-100 p-2 z-50">
+                  <button onClick={() => { setDropdown(false); navigate("/profile"); }} 
+                    className="flex items-center w-full px-4 py-3 text-xs font-bold text-gray-700 hover:bg-gray-50 rounded-xl transition">
+                    <FiUser className="mr-3 text-[#0b645b]" /> User Profile
+                  </button>
+                  <button onClick={() => { setDropdown(false); navigate("/settings"); }} className="flex items-center w-full px-4 py-3 text-xs font-bold text-gray-700 hover:bg-gray-50 rounded-xl"><FiSettings className="mr-3 text-[#0b645b]" /> User Settings</button>
+                  <div className="border-t border-gray-100 my-1"></div>
+                  <button onClick={handleLogout} className="flex items-center w-full px-4 py-3 text-xs font-bold text-red-500 hover:bg-red-50 rounded-xl"><FiLogOut className="mr-3" /> Logout</button>
+                </div>
+              )}
+            </div>
+          </>
+        ) : (
+          <Link to="/login" className="bg-[#0b645b] px-6 py-2 rounded-lg font-bold text-white text-[12px] hover:bg-[#084e46]">SIGN IN / LOG IN</Link>
+        )}
       </div>
     </header>
   );
