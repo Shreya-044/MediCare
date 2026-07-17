@@ -1,150 +1,150 @@
 import { useState } from "react";
 
 export default function Home() {
-  const [openFaq, setOpenFaq] = useState(0);
+  const [openFaq, setOpenFaq] = useState(null);
+  const faqs = [
+    {
+      q: "How does Medicare work?",
+      a: "Medicare connects you to qualified doctors through an easy-to-use platform.",
+    },
+    {
+      q: "How do I choose an online doctor specialist?",
+      a: "Use the search bar to filter by location or specialty.",
+    },
+    {
+      q: "Is it OK to consult a doctor online?",
+      a: "Yes, online consultations are safe for non-emergency conditions.",
+    },
+    {
+      q: "What types of doctors can I consult with on Medicare?",
+      a: "We offer consultations across 12+ medical specialties.",
+    },
+    {
+      q: "Will I get a refund if I cancel an online consultation?",
+      a: "Yes, refunds are processed according to our policy.",
+    },
+  ];
 
   return (
-    <div className="bg-slate-50">
+    <div className="bg-slate-50 min-h-screen pb-20 -mt-6">
+      <div className="max-w-7xl mx-auto px-10">
+        {/* Search Bar */}
+        <div className="py-12">
+          <div className="max-w-3xl mx-auto bg-white rounded-full p-2 shadow-sm border border-gray-200 flex items-center">
+            <span className="pl-6 text-[#0b645b]">🔍</span>
+            <input
+              type="text"
+              placeholder="City Location"
+              className="w-full h-12 px-4 outline-none text-sm text-gray-600"
+            />
+          </div>
+        </div>
 
-      {/* Hero Section */}
-      <section className="bg-teal-700 rounded-3xl p-10 my-12 flex flex-col md:flex-row items-center justify-between text-white shadow-xl">
-        <div>
-          <h2 className="text-4xl font-black mb-4 leading-tight">
-            MediCare provides the best healthcare solutions
+        {/* Hero Section */}
+        <section className="bg-[#0b645b] rounded-3xl p-10 flex flex-col md:flex-row items-center justify-between text-white shadow-xl">
+          <div className="max-w-xl">
+            <h2 className="text-3xl font-black mb-3">
+              MediCare provides the best 
+              <br />healthcare solutions
+            </h2>
+            <p className="text-sm opacity-90">
+              Everything you need to know in minutes
+            </p>
+          </div>
+          <div className="bg-white/10 px-8 py-6 rounded-2xl flex items-center gap-4">
+            <div className="text-3xl">🩺</div>
+            <p className="font-bold text-sm leading-tight">
+              Revolutionizing Healthcare
+              <br />
+              Delivery
+            </p>
+          </div>
+        </section>
+
+        {/* Why Choose */}
+        <section className="my-16">
+          <h2 className="text-center text-2xl font-black text-gray-900 mb-10">
+            WHY CHOOSE MEDICARE?
           </h2>
-
-          <p className="text-lg opacity-90">
-            Everything you need to know in minutes.
-          </p>
-
-          <button className="mt-8 bg-white text-teal-700 px-6 py-3 rounded-xl font-semibold hover:bg-slate-100 transition">
-            Book Appointment
-          </button>
-        </div>
-
-        <div className="mt-8 md:mt-0 bg-white/10 backdrop-blur-md rounded-3xl p-8">
-          <div className="text-6xl text-center">🩺</div>
-
-          <h3 className="text-xl font-bold mt-5">
-            Revolutionizing Healthcare Delivery
-          </h3>
-
-          <p className="mt-2 opacity-90">
-            Consult certified doctors anytime from anywhere.
-          </p>
-        </div>
-      </section>
-
-      {/* Why Choose */}
-      <section className="my-20">
-        <h2 className="text-center text-3xl font-black text-slate-900 mb-14">
-          WHY CHOOSE MEDICARE?
-        </h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-
-          {[
-            {
-              title: "Convenient Access",
-              desc: "Instant Medical Care",
-              icon: "📱",
-            },
-            {
-              title: "Expert Specialists",
-              desc: "Top Doctors Online",
-              icon: "👨‍⚕️",
-            },
-            {
-              title: "Time & Cost Savings",
-              desc: "Affordable Consultations",
-              icon: "💰",
-            },
-            {
-              title: "Personalized Treatment",
-              desc: "Tailored Healthcare",
-              icon: "🧩",
-            },
-            {
-              title: "Secure & Private",
-              desc: "100% Confidential",
-              icon: "🛡️",
-            },
-          ].map((item) => (
-            <div
-              key={item.title}
-              className="bg-white rounded-3xl shadow-md p-6 text-center hover:-translate-y-2 transition duration-300"
-            >
-              <div className="w-20 h-20 rounded-full bg-teal-50 mx-auto flex items-center justify-center text-4xl">
-                {item.icon}
-              </div>
-
-              <h3 className="mt-6 font-bold text-slate-900">
-                {item.title}
-              </h3>
-
-              <p className="text-sm text-slate-500 mt-2">
-                {item.desc}
-              </p>
-            </div>
-          ))}
-
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section className="my-20">
-        <h2 className="text-3xl font-black mb-8">
-          Frequently Asked Questions
-        </h2>
-
-        <div className="space-y-4">
-
-          {[
-            {
-              q: "How does Medicare work?",
-              a: "Book appointments with certified doctors, consult online, and receive digital prescriptions.",
-            },
-            {
-              q: "Can I consult specialists?",
-              a: "Yes. We have specialists from multiple medical departments.",
-            },
-            {
-              q: "Is online consultation safe?",
-              a: "Absolutely. Your consultation and medical records remain private and secure.",
-            },
-            {
-              q: "Can I cancel appointments?",
-              a: "Yes. Cancellation and refund policies apply.",
-            },
-          ].map((faq, index) => (
-            <div
-              key={index}
-              className="bg-white rounded-xl shadow"
-            >
-              <button
-                onClick={() =>
-                  setOpenFaq(openFaq === index ? null : index)
-                }
-                className="w-full flex justify-between items-center px-6 py-5 font-semibold"
+          <div className="grid grid-cols-5 gap-4">
+            {[
+              {
+                title: "Convenient Access",
+                desc: "INSTANT MEDICAL CARE",
+                icon: "📱",
+                color: "bg-pink-50",
+              },
+              {
+                title: "Expert Specialists",
+                desc: "TOP DOCTORS ONLINE",
+                icon: "👨‍⚕️",
+                color: "bg-cyan-50",
+              },
+              {
+                title: "Time & Cost Savings",
+                desc: "EFFICIENT CONSULTATIONS",
+                icon: "💰",
+                color: "bg-orange-50",
+              },
+              {
+                title: "Personalized Treatment",
+                desc: "TAILORED HEALTHCARE",
+                icon: "🧩",
+                color: "bg-green-50",
+              },
+              {
+                title: "Secure & Private",
+                desc: "SAFE TELEMEDICINE",
+                icon: "🛡️",
+                color: "bg-indigo-50",
+              },
+            ].map((item) => (
+              <div
+                key={item.title}
+                className={`${item.color} p-8 rounded-4xl text-center flex flex-col items-center`}
               >
-                {faq.q}
-
-                <span className="text-2xl">
-                  {openFaq === index ? "−" : "+"}
-                </span>
-              </button>
-
-              {openFaq === index && (
-                <div className="px-6 pb-5 text-slate-600">
-                  {faq.a}
+                {/* Circular icon container */}
+                <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center text-3xl mb-6 shadow-sm">
+                  {item.icon}
                 </div>
-              )}
-            </div>
-          ))}
+                <h3 className="font-black text-sm text-gray-900">
+                  {item.title}
+                </h3>
+                <p className="text-[10px] font-bold text-gray-500 mt-2 tracking-widest uppercase">
+                  {item.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
 
-        </div>
-      </section>
-
+        {/* FAQ Section */}
+        <section>
+          <h2 className="text-2xl font-black text-gray-900 mb-6">FAQ's</h2>
+          <div className="space-y-4">
+            {faqs.map((faq, i) => (
+              <div
+                key={i}
+                className="rounded-xl border border-gray-200 bg-white overflow-hidden"
+              >
+                <button
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  className={`w-full p-5 flex justify-between font-bold text-sm transition-colors ${
+                    openFaq === i ? "bg-[#14b8a6] text-white" : "text-gray-900"
+                  }`}
+                >
+                  {faq.q} <span>{openFaq === i ? "-" : "+"}</span>
+                </button>
+                {openFaq === i && (
+                  <div className="p-5 text-sm bg-[#14b8a6] text-white -mt-1">
+                    {faq.a}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
     </div>
   );
 }
