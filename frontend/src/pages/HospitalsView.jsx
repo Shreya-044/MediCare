@@ -1,18 +1,35 @@
-import { useState, useEffect } from "react";
-import { FiTrash2, FiPlus, FiEdit2, FiSave, FiMapPin, FiPhone, FiMail, FiAlertCircle, FiX } from 'react-icons/fi';
+import { useState, useMemo } from "react";
+import { 
+  FiTrash2, FiPlus, FiEdit2, FiSave, FiMapPin, FiPhone, FiMail, 
+  FiAlertCircle, FiX, FiSearch, FiChevronLeft, FiChevronRight, 
+  FiChevronsLeft, FiChevronsRight
+} from 'react-icons/fi';
 import api from "../services/api";
 
-export default function HospitalsView({
-  hospitals,
-  fetchHospitals,
-}) {
+export default function HospitalsView({ hospitals = [], fetchHospitals }) {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editValues, setEditValues] = useState({});
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 4;
+
   const [formData, setFormData] = useState({
     hospital_name: '', email: '', phone: '', emergency_phone: '',
     address: '', city: '', state: '', pincode: ''
   });
+
+  const filteredHospitals = useMemo(() => {
+    return hospitals.filter(h => 
+      h.hospital_name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [hospitals, searchQuery]);
+
+  const totalPages = Math.ceil(filteredHospitals.length / itemsPerPage);
+  const paginatedHospitals = filteredHospitals.slice(
+    (currentPage - 1) * itemsPerPage, 
+    currentPage * itemsPerPage
+  );
 
   const StatusToggle = ({ status, onToggle }) => (
     <button onClick={onToggle} className={`relative flex items-center h-7 w-16 rounded-full transition-colors duration-300 ${status === 'active' ? 'bg-green-500' : 'bg-gray-300'}`}>
@@ -24,46 +41,24 @@ export default function HospitalsView({
   const saveHospital = async () => {
     try {
       const token = localStorage.getItem("token");
-
-      const response = await api.post(
-        "/super-admin/add-hospital",
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
+      const response = await api.post("/super-admin/add-hospital", formData, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (response.data.success) {
         fetchHospitals();
-
         setShowForm(false);
-
-        setFormData({
-          hospital_name: "",
-          email: "",
-          phone: "",
-          emergency_phone: "",
-          address: "",
-          city: "",
-          state: "",
-          pincode: "",
-        });
+        setFormData({ hospital_name: '', email: '', phone: '', emergency_phone: '', address: '', city: '', state: '', pincode: '' });
       }
-    } catch (err) {
-      console.log(err);
-    }
+    } catch (err) { console.log(err); }
   };
 
   const startEdit = (h) => { setEditingId(h._id); setEditValues(h); };
-  const saveEdit = (_id) => { setHospitals(hospitals.map(h => h._id === _id ? { ...h, ...editValues } : h)); setEditingId(null); };
+  const saveEdit = (_id) => { setEditingId(null); };
 
-  // Helper to render an editable field with a label
   const EditField = ({ label, field }) => (
     <div className="mb-2">
       <label className="text-[9px] font-black text-gray-400 uppercase tracking-wider ml-1">{label}</label>
-      <input className="w-full border border-gray-200 p-1.5 rounded-lg text-xs outline-none focus:ring-1 focus:ring-[#0b645b]" value={editValues[field]} onChange={e => setEditValues({ ...editValues, [field]: e.target.value })} />
+      <input className="w-full border border-gray-200 p-1.5 rounded-lg text-xs outline-none focus:ring-1 focus:ring-[#0b645b]" value={editValues[field] || ''} onChange={e => setEditValues({ ...editValues, [field]: e.target.value })} />
     </div>
   );
 
@@ -74,14 +69,25 @@ export default function HospitalsView({
           <h2 className="text-2xl font-black text-gray-900">Manage Hospitals</h2>
           <p className="text-gray-500 text-sm">Comprehensive view of all hospital facility registrations.</p>
         </div>
-        <button onClick={() => setShowForm(!showForm)} className="bg-[#0b645b] text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-[#084d46] transition-all shadow-lg shadow-teal-900/20 active:scale-95">
-          <FiPlus /> {showForm ? "Close Form" : "Add New Hospital"}
-        </button>
+        
+        <div className="flex gap-4 items-center">
+          <div className="relative">
+            <FiSearch className="absolute left-3 top-3 text-gray-400" size={16} />
+            <input
+              placeholder="Search..."
+              className="pl-9 pr-4 py-3 bg-gray-50 rounded-xl text-sm font-bold outline-none border border-transparent focus:border-[#0b645b] transition w-64"
+              value={searchQuery}
+              onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+            />
+          </div>
+          <button onClick={() => setShowForm(!showForm)} className="bg-[#0b645b] text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-[#084d46] transition-all">
+            <FiPlus /> {showForm ? "Close" : "Add New Hospital"}
+          </button>
+        </div>
       </div>
 
       {showForm && (
-        <div className="mb-8 p-6 bg-gray-50 border border-gray-200 rounded-3xl">
-          <h3 className="text-sm font-black text-gray-400 uppercase mb-4 tracking-widest">Add Hospital Details</h3>
+        <div className="mb-8 p-6 bg-gray-50 border border-gray-200 rounded-3xl animate-in slide-in-from-top-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {Object.keys(formData).map((key) => (
               <div key={key}>
@@ -100,59 +106,67 @@ export default function HospitalsView({
             <tr><th className="pb-4">Hospital Details</th><th className="pb-4">Location & Logistics</th><th className="pb-4">Status</th><th className="pb-4 text-center">Actions</th></tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {hospitals.map(h => (
+            {paginatedHospitals.map(h => (
               <tr key={h._id} className="hover:bg-gray-50/50">
                 <td className="py-6">
-                  {editingId === h._id ? (
-                    <div className="w-64">
-                      <EditField label="Name" field="hospital_name" />
-                      <EditField label="Email" field="email" />
-                      <EditField label="Phone" field="phone" />
-                      <EditField label="Emergency" field="emergency_phone" />
-                    </div>
-                  ) : (
-                    <div>
-                      <p className="font-black text-gray-900">{h.hospital_name}</p>
-                      <div className="flex items-center gap-2 text-xs text-gray-500 mt-1"><FiMail size={12} />{h.email}</div>
-                      <div className="flex items-center gap-2 text-xs text-gray-500 mt-1"><FiPhone size={12} />{h.phone}</div>
-                    </div>
-                  )}
+                  {editingId === h._id ? <div className="w-64"><EditField label="Name" field="hospital_name" /><EditField label="Email" field="email" /><EditField label="Phone" field="phone" /><EditField label="Emergency" field="emergency_phone" /></div> : 
+                  <div><p className="font-black text-gray-900">{h.hospital_name}</p><div className="flex items-center gap-2 text-xs text-gray-500 mt-1"><FiMail size={12} />{h.email}</div><div className="flex items-center gap-2 text-xs text-gray-500 mt-1"><FiPhone size={12} />{h.phone}</div></div>}
                 </td>
                 <td className="py-6 text-xs text-gray-600">
-                  {editingId === h._id ? (
-                    <div className="w-64">
-                      <EditField label="Address" field="address" />
-                      <EditField label="City" field="city" />
-                      <EditField label="State" field="state" />
-                      <EditField label="Pincode" field="pincode" />
-                    </div>
-                  ) : (
-                    <div className="space-y-1">
-                      <p className="flex items-center gap-2"><FiMapPin size={12} />{h.address}, {h.city}</p>
-                      <p className="text-[10px] uppercase font-bold text-gray-400">Pincode: {h.pincode} | State: {h.state}</p>
-                      <p className="flex items-center gap-2 text-red-500"><FiAlertCircle size={12} /> {h.emergency_phone}</p>
-                    </div>
-                  )}
+                  {editingId === h._id ? <div className="w-64"><EditField label="Address" field="address" /><EditField label="City" field="city" /><EditField label="State" field="state" /><EditField label="Pincode" field="pincode" /></div> : 
+                  <div className="space-y-1"><p className="flex items-center gap-2"><FiMapPin size={12} />{h.address}, {h.city}</p><p className="text-[10px] uppercase font-bold text-gray-400">Pincode: {h.pincode} | State: {h.state}</p><p className="flex items-center gap-2 text-red-500"><FiAlertCircle size={12} /> {h.emergency_phone}</p></div>}
                 </td>
-                <td className="py-6"><StatusToggle status={h.status} onToggle={() => setHospitals(hospitals.map(i => i._id === h._id ? { ...i, status: i.status === 'active' ? 'inactive' : 'active' } : i))} /></td>
-                <td className="py-6 text-center">
-                  {editingId === h._id ? (
-                    <div className="flex gap-2 justify-center">
-                      <button onClick={() => saveEdit(h._id)} className="bg-green-600 text-white p-2 rounded-lg"><FiSave size={16} /></button>
-                      <button onClick={() => setEditingId(null)} className="bg-gray-200 text-gray-600 p-2 rounded-lg"><FiX size={16} /></button>
-                    </div>
-                  ) : (
-                    <div className="flex justify-center gap-2">
-                      <button onClick={() => startEdit(h)} className="text-blue-500 p-2"><FiEdit2 size={16} /></button>
-                      <button onClick={() => setHospitals(hospitals.filter(i => i._id !== h._id))} className="text-red-500 p-2"><FiTrash2 size={16} /></button>
-                    </div>
-                  )}
-                </td>
+                <td className="py-6"><StatusToggle status={h.status} onToggle={() => {}} /></td>
+                <td className="py-6 text-center">{editingId === h._id ? <div className="flex gap-2 justify-center"><button onClick={() => saveEdit(h._id)} className="bg-green-600 text-white p-2 rounded-lg"><FiSave size={16} /></button><button onClick={() => setEditingId(null)} className="bg-gray-200 text-gray-600 p-2 rounded-lg"><FiX size={16} /></button></div> : <div className="flex justify-center gap-2"><button onClick={() => startEdit(h)} className="text-blue-500 p-2"><FiEdit2 size={16} /></button><button className="text-red-500 p-2"><FiTrash2 size={16} /></button></div>}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-4 pt-8 border-t border-gray-100">
+          {/* First Page */}
+          <button 
+            disabled={currentPage === 1} 
+            onClick={() => setCurrentPage(1)} 
+            className="p-2 rounded-full hover:bg-gray-100 disabled:opacity-20"
+          >
+            <FiChevronsLeft />
+          </button>
+
+          {/* Previous Page */}
+          <button 
+            disabled={currentPage === 1} 
+            onClick={() => setCurrentPage(p => p - 1)} 
+            className="p-2 rounded-full hover:bg-gray-100 disabled:opacity-20"
+          >
+            <FiChevronLeft />
+          </button>
+          
+          <span className="text-xs font-black text-gray-400 uppercase tracking-widest w-20 text-center">
+            {currentPage} of {totalPages}
+          </span>
+          
+          {/* Next Page */}
+          <button 
+            disabled={currentPage === totalPages} 
+            onClick={() => setCurrentPage(p => p + 1)} 
+            className="p-2 rounded-full hover:bg-gray-100 disabled:opacity-20"
+          >
+            <FiChevronRight />
+          </button>
+
+          {/* Last Page */}
+          <button 
+            disabled={currentPage === totalPages} 
+            onClick={() => setCurrentPage(totalPages)} 
+            className="p-2 rounded-full hover:bg-gray-100 disabled:opacity-20"
+          >
+            <FiChevronsRight />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

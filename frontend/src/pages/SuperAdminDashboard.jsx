@@ -37,10 +37,21 @@ export default function SuperAdminDashboard({
                 </div>
               </button>
 
-              <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-                <p className="text-xs font-bold text-gray-400 uppercase">Active Facilities</p>
-                <p className="text-4xl font-black mt-2 text-gray-900">{activeHospitals}</p>
-              </div>
+                {/* Active Admins Card */}
+                <button
+                  onClick={() => onNavigate("Admins")}
+                  className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm text-left transition-transform hover:scale-[1.02] active:scale-95 group flex justify-between items-start"
+                >
+                  <div>
+                    <p className="text-xs font-bold text-gray-400 uppercase">Active Admins</p>
+                    <p className="text-4xl font-black mt-2 text-gray-900">
+                      0
+                    </p>
+                  </div>
+                  <div className="bg-gray-100 p-2 rounded-full group-hover:bg-gray-200 transition-colors text-gray-600">
+                    <FiArrowRight size={20} />
+                  </div>
+                </button>
               <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
                 <p className="text-xs font-bold text-gray-400 uppercase">Total Revenue</p>
                 <p className="text-4xl font-black mt-2 text-gray-900">${totalRevenue.toLocaleString()}</p>
@@ -58,7 +69,7 @@ export default function SuperAdminDashboard({
         fetchHospitals={fetchHospitals}
       />;
       case "Admins": return <AdminsView hospitals={hospitals} />;
-      case "Revenue": return <RevenueView />;
+      case "Revenue": return <RevenueView />
       default: return null;
     }
   };

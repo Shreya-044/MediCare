@@ -1,7 +1,6 @@
 import { Routes, Route, BrowserRouter, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import api from "./services/api";
-
 import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -16,10 +15,10 @@ import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 
 function AppContent() {
   const navigate = useNavigate();
-
-  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("token"));
-  const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("user")) || { name: "", email: "", role: "" });
+  const location = window.location.pathname;
   const [hospitals, setHospitals] = useState([]);
+  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("token"));
+  const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("user")) || { role: "" });
   const [activeTab, setActiveTab] = useState(() => {
     const path = window.location.pathname;
     if (path.includes("hospitals")) return "Hospitals";
@@ -40,19 +39,25 @@ function AppContent() {
   };
 
   useEffect(() => {
-
     if (user?.role === "super_admin") {
       fetchHospitals();
     }
-
   }, [user]);
 
+  const handleAdminNav = (tab) => {
+    setActiveTab(tab);
+    const paths = {
+      Dashboard: "/admin/dashboard",
+      Doctors: "/admin/doctors",
+      Staff: "/admin/staff",
+      Patients: "/admin/patients"
+    };
+    navigate(paths[tab]);
+  };
+
   const fetchHospitals = async () => {
-
     try {
-
       const token = localStorage.getItem("token");
-
       const response = await api.get(
         "/super-admin/hospitals",
         {
@@ -61,15 +66,12 @@ function AppContent() {
           },
         }
       );
-
       if (response.data.success) {
         setHospitals(response.data.data);
       }
-
     } catch (error) {
       console.error(error);
     }
-
   };
 
   return (
@@ -78,8 +80,6 @@ function AppContent() {
         isLoggedIn={isLoggedIn}
         setIsLoggedIn={setIsLoggedIn}
         user={user}
-        activeTab={activeTab}
-        setActiveTab={handleSuperAdminNav}
       />
 
       <main className="grow">
@@ -109,7 +109,10 @@ function AppContent() {
               />
             }
           />
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/dashboard" element={<AdminDashboard activeTab="Dashboard" onNavigate={handleAdminNav} />} />
+          <Route path="/admin/doctors" element={<AdminDashboard activeTab="Doctors" onNavigate={handleAdminNav} />} />
+          <Route path="/admin/staff" element={<AdminDashboard activeTab="Staff" onNavigate={handleAdminNav} />} />
+          <Route path="/admin/patients" element={<AdminDashboard activeTab="Patients" onNavigate={handleAdminNav} />} />
           <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
           <Route path="/staff/dashboard" element={<StaffDashboard />} />
         </Routes>

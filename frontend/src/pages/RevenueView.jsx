@@ -1,10 +1,24 @@
-import { useState } from "react";
-import { FiChevronDown, FiChevronUp } from "react-icons/fi";
+import { useState, useMemo, useEffect } from "react";
+import { FiChevronDown, FiChevronUp, FiChevronLeft, FiChevronRight, FiChevronsLeft, FiChevronsRight } from "react-icons/fi";
 
-export default function RevenueView({ hospitals = [] }) {
+export default function RevenueView({ hospitals = [], fetchHospitals }) {
   const [showDetails, setShowDetails] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 4;
+
+  // Refresh data whenever this component mounts
+  useEffect(() => {
+    if (fetchHospitals) {
+      fetchHospitals();
+    }
+  }, [fetchHospitals]);
 
   const totalRevenue = hospitals.reduce((sum, h) => sum + (parseFloat(h.revenue) || 0), 0);
+  const totalPages = Math.ceil(hospitals.length / itemsPerPage);
+  
+  const paginatedHospitals = useMemo(() => {
+    return hospitals.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  }, [hospitals, currentPage]);
 
   return (
     <div className="space-y-6">
@@ -22,18 +36,33 @@ export default function RevenueView({ hospitals = [] }) {
         </div>
       </div>
 
-      {/* Details List - Always present, visibility controlled by state */}
+      {/* Details List */}
       {showDetails && (
         <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm animate-in slide-in-from-top-2 duration-300">
           <h3 className="text-sm font-black text-gray-900 mb-4 uppercase tracking-widest">Revenue Breakdown</h3>
           <div className="space-y-3">
-            {hospitals.map((hospital, index) => (
-              <div key={index} className="flex justify-between items-center p-3 hover:bg-gray-50 rounded-xl">
-                <span className="text-sm font-bold text-gray-700">{hospital.hospital_name}</span>
-                <span className="text-sm font-black text-gray-900">${parseFloat(hospital.revenue || 0).toLocaleString()}</span>
-              </div>
-            ))}
+            {paginatedHospitals.length > 0 ? (
+              paginatedHospitals.map((hospital, index) => (
+                <div key={hospital._id || index} className="flex justify-between items-center p-3 hover:bg-gray-50 rounded-xl border border-gray-50">
+                  <span className="text-sm font-bold text-gray-700">{hospital.hospital_name}</span>
+                  <span className="text-sm font-black text-gray-900">${parseFloat(hospital.revenue || 0).toLocaleString()}</span>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-gray-400 italic">No hospital revenue data available.</p>
+            )}
           </div>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center gap-4 mt-6 pt-6 border-t border-gray-100">
+              <button disabled={currentPage === 1} onClick={() => setCurrentPage(1)} className="p-2 rounded-full hover:bg-gray-100 disabled:opacity-20"><FiChevronsLeft /></button>
+              <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} className="p-2 rounded-full hover:bg-gray-100 disabled:opacity-20"><FiChevronLeft /></button>
+              <span className="text-xs font-black text-gray-400 uppercase w-20 text-center">{currentPage} of {totalPages}</span>
+              <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)} className="p-2 rounded-full hover:bg-gray-100 disabled:opacity-20"><FiChevronRight /></button>
+              <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(totalPages)} className="p-2 rounded-full hover:bg-gray-100 disabled:opacity-20"><FiChevronsRight /></button>
+            </div>
+          )}
         </div>
       )}
     </div>
