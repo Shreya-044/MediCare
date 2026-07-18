@@ -2,20 +2,109 @@ import { useState } from "react";
 import { FiLock, FiUser, FiX, FiArrowRight, FiCheckCircle } from "react-icons/fi";
 import { FaHeartbeat } from "react-icons/fa";
 import { useNavigate, Link } from "react-router-dom";
+import api from "../services/api";
 
-export default function CMSLogin() {
+export default function CMSLogin({
+  setIsLoggedIn,
+  setUser,
+}) {
   const navigate = useNavigate();
   const [showPopup, setShowPopup] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-  const handleSubmit = (e) => {
+  const [loading, setLoading] = useState(false);
+
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (e) => {
+
     e.preventDefault();
-    setShowPopup(true);
-    setTimeout(() => {
-      setShowPopup(false);
-      navigate("/doctor-home");
-    }, 2000);
-  };
 
+    setLoading(true);
+    setError("");
+
+    try {
+
+      const response = await api.post("/auth/login", {
+        email,
+        password
+      });
+
+      if (response.data.success) {
+
+        const user = response.data.user;
+        setUser(user);
+
+        setIsLoggedIn(true);
+
+        localStorage.setItem("token", response.data.token);
+
+        localStorage.setItem("user", JSON.stringify(user));
+
+        setShowPopup(true);
+
+        setTimeout(() => {
+
+          if (user.role === "super_admin") {
+
+            navigate("/super-admin/dashboard");
+
+          }
+
+          else if (user.role === "admin") {
+
+            navigate("/admin/dashboard");
+
+          }
+
+          else if (user.role === "doctor") {
+
+            navigate("/doctor/dashboard");
+
+          }
+
+          else if (user.role === "staff") {
+
+            navigate("/staff/dashboard");
+
+          }
+
+          else {
+
+            setError("Unauthorized User");
+
+          }
+
+        }, 1200);
+
+      }
+
+    }
+
+    catch (err) {
+
+      if (err.response) {
+
+        setError(err.response.data.message);
+
+      }
+
+      else {
+
+        setError("Server not responding.");
+
+      }
+
+    }
+
+    finally {
+
+      setLoading(false);
+
+    }
+
+  };
   return (
     <div className="min-h-screen bg-cover bg-center relative flex flex-col items-center justify-center px-4 -mt-8"
       style={{ backgroundImage: "url('https://imgs.search.brave.com/UZDCMjtvFnnQwffo_wAW8WPocbZyKdSxkv7AxHBGYik/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9zdGF0/aWMudmVjdGVlenku/Y29tL3N5c3RlbS9y/ZXNvdXJjZXMvdGh1/bWJuYWlscy8wMTIv/NjAyLzc2NC9zbWFs/bC9hYnN0cmFjdC1i/bHVyLWhvc3BpdGFs/LWNvcnJpZG9yLWRl/Zm9jdXNlZC1tZWRp/Y2FsLWJhY2tncm91/bmQtcGhvdG8uanBn')" }}>
@@ -33,14 +122,32 @@ export default function CMSLogin() {
         <h1 className="text-center text-2xl font-black text-slate-900">CMS Portal</h1>
         <form onSubmit={handleSubmit} className="mt-8 space-y-5">
           <div>
-            <label className="mb-1 ml-1 block text-[9px] font-black uppercase text-gray-400">Staff ID</label>
-            <div className="flex items-center rounded-2xl border bg-gray-50 px-4 h-12"><FiUser className="text-gray-400" /><input required type="text" placeholder="Enter Staff ID" className="ml-3 w-full bg-transparent outline-none text-xs" /></div>
+            <label className="mb-1 ml-1 block text-[9px] font-black uppercase text-gray-400">Email Address</label>
+            <div className="flex items-center rounded-2xl border bg-gray-50 px-4 h-12"><FiUser className="text-gray-400" />
+              <input required type="text" value={email}
+                onChange={(e) => setEmail(e.target.value)} placeholder="Enter email" className="ml-3 w-full bg-transparent outline-none text-xs" /></div>
           </div>
           <div>
             <label className="mb-1 ml-1 block text-[9px] font-black uppercase text-gray-400">Password</label>
-            <div className="flex items-center rounded-2xl border bg-gray-50 px-4 h-12"><FiLock className="text-gray-400" /><input required type="password" placeholder="Enter password" className="ml-3 w-full bg-transparent outline-none text-xs" /></div>
+            <div className="flex items-center rounded-2xl border bg-gray-50 px-4 h-12"><FiLock className="text-gray-400" />
+              <input
+                required
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter password"
+                className="ml-3 w-full bg-transparent outline-none text-xs"
+              /></div>
+            {
+              error &&
+              <p className="text-red-500 text-xs">
+                {error}
+              </p>
+            }
           </div>
-          <button type="submit" className="flex h-12 w-full items-center justify-center rounded-2xl bg-[#0b645b] text-sm font-bold text-white hover:bg-[#084e46]">Login to CMS <FiArrowRight className="ml-2" /></button>
+          <button type="submit" className="flex h-12 w-full items-center justify-center rounded-2xl bg-[#0b645b] text-sm font-bold text-white hover:bg-[#084e46]">{
+            loading ? "Logging in..." : "Login to CMS"
+          }<FiArrowRight className="ml-2" /></button>
         </form>
       </div>
 

@@ -2,7 +2,6 @@ from app.database import db
 from app.models.hospital import hospital_schema
 from bson import ObjectId
 
-
 def create_hospital(data):
 
     hospitals = db["hospitals"]
