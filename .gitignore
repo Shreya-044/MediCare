@@ -1,0 +1,24 @@
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+
+# Node
+node_modules/
+
+# Secret keys
+*.pem
+*.key
+*.crt
+*.pfx
+*.p12
+credentials.json
+serviceAccountKey.json
+firebase-adminsdk*.json
+
+# IDE
+.vscode/
