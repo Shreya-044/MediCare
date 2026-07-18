@@ -13,16 +13,16 @@ const Navbar = ({ isLoggedIn, setIsLoggedIn, user }) => {
   const navigate = useNavigate();
   const isActive = (tabName) => {
     const path = location.pathname;
-    if (tabName === "Dashboard") return path.includes("dashboard");
-    return path.includes(tabName.toLowerCase());
+    const tab = tabName.toLowerCase();
+    if (tab === "dashboard") {
+      return path.includes("dashboard");
+    }
+    return path.includes(tab);
   };
   const [dropdown, setDropdown] = useState(false);
-  const loggedInUser =
-    user || JSON.parse(localStorage.getItem("user") || "null");
-
+  const loggedInUser = user || JSON.parse(localStorage.getItem("user") || "null");
   const role = loggedInUser?.role;
   const userName = loggedInUser?.name || "User";
-
   let tabs = [];
 
   if (role === "super_admin") {
@@ -60,11 +60,8 @@ const Navbar = ({ isLoggedIn, setIsLoggedIn, user }) => {
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-
     setIsLoggedIn(false);
-
     setDropdown(false);
-
     if (
       role === "super_admin" ||
       role === "admin" ||
@@ -83,19 +80,15 @@ const Navbar = ({ isLoggedIn, setIsLoggedIn, user }) => {
         case "Dashboard":
           navigate("/super-admin/dashboard");
           break;
-
         case "Hospitals":
           navigate("/super-admin/hospitals");
           break;
-
         case "Admins":
           navigate("/super-admin/admins");
           break;
-
         case "Revenue":
           navigate("/super-admin/revenue");
           break;
-
         default:
           navigate("/super-admin/dashboard");
       }
@@ -140,12 +133,8 @@ const Navbar = ({ isLoggedIn, setIsLoggedIn, user }) => {
   return (
     <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b-2 border-gray-100">
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-10">
-
         {/* Logo */}
-        <div
-          className="flex flex-col cursor-pointer"
-          onClick={() => navigate("/")}
-        >
+        <div className="flex flex-col cursor-pointer" onClick={() => navigate("/")}>
           <h1 className="text-xl font-black text-[#0b645b]">
             {role === "super_admin" ||
               role === "admin" ||
@@ -154,7 +143,6 @@ const Navbar = ({ isLoggedIn, setIsLoggedIn, user }) => {
               ? "MediCare CMS"
               : "MediCare Portals"}
           </h1>
-
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">
             {role === "super_admin" ||
               role === "admin" ||
@@ -186,19 +174,16 @@ const Navbar = ({ isLoggedIn, setIsLoggedIn, user }) => {
 
             {/* User Dropdown */}
             <div className="relative">
-              <button
-                onClick={() => setDropdown(!dropdown)}
+              <button onClick={() => setDropdown(!dropdown)}
                 className="flex items-center gap-2 p-1 bg-gray-100 rounded-full hover:bg-gray-200 transition"
               >
                 <div className="bg-[#0b645b] p-2 rounded-full">
                   <FiUserCheck className="text-white text-sm" />
                 </div>
-
                 <div className="pr-3 text-left">
                   <p className="text-xs font-bold text-[#0b645b]">
                     {userName}
                   </p>
-
                   <p className="text-[10px] uppercase text-gray-500">
                     {role?.replace("_", " ")}
                   </p>
@@ -207,9 +192,7 @@ const Navbar = ({ isLoggedIn, setIsLoggedIn, user }) => {
 
               {dropdown && (
                 <div className="absolute right-0 mt-3 w-52 bg-white rounded-3xl shadow-2xl border border-gray-100 p-2 z-50">
-
-                  <button
-                    onClick={() => {
+                  <button onClick={() => {
                       setDropdown(false);
                       navigate("/profile");
                     }}
@@ -256,5 +239,4 @@ const Navbar = ({ isLoggedIn, setIsLoggedIn, user }) => {
     </header>
   );
 };
-
 export default Navbar;

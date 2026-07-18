@@ -13,20 +13,23 @@ import UserProfile from "./pages/UserProfile";
 import UserSettings from "./pages/UserSettings";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import AppointmentForm from "./pages/AppointmentForm";
+import { useLocation } from "react-router-dom";
 
 function AppContent() {
   const navigate = useNavigate();
-  const location = window.location.pathname;
   const [hospitals, setHospitals] = useState([]);
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("token"));
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("user")) || { role: "" });
-  const [activeTab, setActiveTab] = useState(() => {
-    const path = window.location.pathname;
-    if (path.includes("hospitals")) return "Hospitals";
-    if (path.includes("admins")) return "Admins";
-    if (path.includes("revenue")) return "Revenue";
-    return "Dashboard";
-  });
+  const [activeTab, setActiveTab] = useState("Dashboard");
+  const location = useLocation();
+
+  useEffect(() => {
+    const path = location.pathname;
+    if (path.includes("hospitals")) setActiveTab("Hospitals");
+    else if (path.includes("admins")) setActiveTab("Admins");
+    else if (path.includes("revenue")) setActiveTab("Revenue");
+    else setActiveTab("Dashboard");
+  }, [location]);
 
   const handleSuperAdminNav = (tab) => {
     setActiveTab(tab);

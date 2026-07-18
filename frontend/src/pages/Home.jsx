@@ -119,7 +119,7 @@ export default function Home() {
                 <span className="text-rose-400 text-xs">📍</span> {selectedHospital.address}, {selectedHospital.city}
               </p>
               
-              {/* Contact Details - Aligned to match reference */}
+              {/* Contact Details */}
               <div className="flex items-center gap-4 mt-2 text-xs font-bold text-[#0b645b]">
                 <p className="flex items-center gap-1">
                   <span className="text-teal-600">📞</span> {selectedHospital.phone}
