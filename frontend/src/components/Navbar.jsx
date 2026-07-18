@@ -142,7 +142,6 @@ const Navbar = ({ isLoggedIn, setIsLoggedIn, user }) => {
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-10">
 
         {/* Logo */}
-
         <div
           className="flex flex-col cursor-pointer"
           onClick={() => navigate("/")}
@@ -162,21 +161,20 @@ const Navbar = ({ isLoggedIn, setIsLoggedIn, user }) => {
               role === "doctor" ||
               role === "staff"
               ? "Hospital Management System"
-              : "Doctor Appointment"}
+              : "Doctor Appointment & Live Queue"}
           </p>
         </div>
 
         {isLoggedIn ? (
           <>
             {/* Navigation */}
-
             <div className="flex gap-1 bg-gray-100 p-1 rounded-full">
               {tabs.map((tab) => (
                 <button
                   key={tab}
                   onClick={() => handleNavigation(tab)}
                   className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition ${
-                    isActive(tab) // Use the helper function here
+                    isActive(tab)
                       ? "bg-[#0b645b] text-white shadow-md"
                       : "text-gray-500 hover:text-gray-900"
                   }`}
@@ -187,7 +185,6 @@ const Navbar = ({ isLoggedIn, setIsLoggedIn, user }) => {
             </div>
 
             {/* User Dropdown */}
-
             <div className="relative">
               <button
                 onClick={() => setDropdown(!dropdown)}
