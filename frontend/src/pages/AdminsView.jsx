@@ -1,14 +1,76 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FiUser, FiPlus, FiTrash2, FiShield, FiBriefcase, FiAlertCircle } from "react-icons/fi";
+import api from "../services/api";
 
 export default function AdminsView({ hospitals = [] }) {
   const [admins, setAdmins] = useState([]);
+  useEffect(() => {
+    fetchAdmins();
+  }, []);
+
+  console.log("Hospitals:", hospitals);
+  const fetchAdmins = async () => {
+    try {
+      const token = localStorage.getItem("token");
+
+      const response = await api.get(
+        "/super-admin/admins",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.data.success) {
+        setAdmins(response.data.data);
+      }
+
+    } catch (error) {
+  console.log("==========================");
+  console.log("Status:", error.response?.status);
+  console.log("Backend Response:", error.response?.data);
+  console.log("Request Body:", newAdmin);
+  console.log("==========================");
+
+  alert(JSON.stringify(error.response?.data));
+}
+  };
   const [newAdmin, setNewAdmin] = useState({ name: "", email: "", password: "", hospital_id: "" });
 
-  const handleAddAdmin = () => {
-    if (!newAdmin.name || !newAdmin.hospital_id || !newAdmin.password) return;
-    setAdmins([...admins, { ...newAdmin, id: Date.now(), status: "active", created_at: new Date().toISOString() }]);
-    setNewAdmin({ name: "", email: "", password: "", hospital_id: "" });
+  const handleAddAdmin = async () => {
+    try {
+
+      const token = localStorage.getItem("token");
+
+      const response = await api.post(
+        "/super-admin/add-admin",
+        newAdmin,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.data.success) {
+
+        fetchAdmins();
+
+        setNewAdmin({
+          name: "",
+          email: "",
+          password: "",
+          hospital_id: "",
+        });
+
+      }
+
+    } catch (error) {
+
+      console.error(error);
+
+    }
   };
 
   return (
@@ -25,7 +87,7 @@ export default function AdminsView({ hospitals = [] }) {
           <div className="bg-[#0b645b] p-2 rounded-lg text-white"><FiShield /></div>
           <h3 className="font-black text-gray-900">Register New Administrator</h3>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <input placeholder="Admin Full Name" className="p-3 bg-gray-50 rounded-xl text-sm font-bold border border-transparent focus:border-[#0b645b] outline-none transition" value={newAdmin.name} onChange={(e) => setNewAdmin({ ...newAdmin, name: e.target.value })} />
           <input placeholder="Email Address" className="p-3 bg-gray-50 rounded-xl text-sm font-bold border border-transparent focus:border-[#0b645b] outline-none transition" value={newAdmin.email} onChange={(e) => setNewAdmin({ ...newAdmin, email: e.target.value })} />
@@ -35,7 +97,7 @@ export default function AdminsView({ hospitals = [] }) {
             {hospitals.map(h => <option key={h._id} value={h._id}>{h.hospital_name}</option>)}
           </select>
         </div>
-        
+
         <button onClick={handleAddAdmin} className="mt-6 w-full md:w-auto px-8 py-3 bg-[#0b645b] text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#084e46] transition-all">
           <FiPlus /> Register Admin
         </button>
@@ -44,7 +106,7 @@ export default function AdminsView({ hospitals = [] }) {
       {/* Admin List */}
       <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
         <h2 className="text-lg font-black mb-6 flex items-center gap-2">Registered Admins <span className="bg-gray-100 px-2 py-0.5 rounded-md text-xs text-gray-500">{admins.length}</span></h2>
-        
+
         <div className="space-y-4">
           {admins.length === 0 ? (
             <div className="text-center py-12 border-2 border-dashed border-gray-100 rounded-3xl">
@@ -53,7 +115,7 @@ export default function AdminsView({ hospitals = [] }) {
             </div>
           ) : (
             admins.map((admin) => (
-              <div key={admin.id} className="group flex items-center justify-between p-5 bg-gray-50 hover:bg-white border border-gray-100 hover:shadow-md rounded-2xl transition-all">
+              <div key={admin._id} className="group flex items-center justify-between p-5 bg-gray-50 hover:bg-white border border-gray-100 hover:shadow-md rounded-2xl transition-all">
                 <div className="flex items-center gap-4">
                   <div className="bg-[#0b645b]/10 p-4 rounded-full text-[#0b645b] group-hover:bg-[#0b645b] group-hover:text-white transition"><FiUser /></div>
                   <div>
@@ -61,7 +123,7 @@ export default function AdminsView({ hospitals = [] }) {
                     <p className="text-[10px] text-gray-400 uppercase tracking-widest">{admin.email}</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center gap-6">
                   <div className="flex items-center gap-2 text-[10px] font-bold text-gray-500">
                     <FiBriefcase />

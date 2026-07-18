@@ -2,8 +2,10 @@ import { useState, useEffect } from "react";
 import { FiTrash2, FiPlus, FiEdit2, FiSave, FiMapPin, FiPhone, FiMail, FiAlertCircle, FiX } from 'react-icons/fi';
 import api from "../services/api";
 
-export default function HospitalsView() {
-  const [hospitals, setHospitals] = useState([]);
+export default function HospitalsView({
+  hospitals,
+  fetchHospitals,
+}) {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editValues, setEditValues] = useState({});
@@ -11,28 +13,6 @@ export default function HospitalsView() {
     hospital_name: '', email: '', phone: '', emergency_phone: '',
     address: '', city: '', state: '', pincode: ''
   });
-
-  useEffect(() => {
-    fetchHospitals();
-  }, []);
-
-  const fetchHospitals = async () => {
-    try {
-      const token = localStorage.getItem("token");
-
-      const response = await api.get("/super-admin/hospitals", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.data.success) {
-        setHospitals(response.data.data);
-      }
-    } catch (error) {
-      console.error("Error fetching hospitals:", error);
-    }
-  };
 
   const StatusToggle = ({ status, onToggle }) => (
     <button onClick={onToggle} className={`relative flex items-center h-7 w-16 rounded-full transition-colors duration-300 ${status === 'active' ? 'bg-green-500' : 'bg-gray-300'}`}>

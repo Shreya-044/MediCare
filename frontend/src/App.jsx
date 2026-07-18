@@ -1,5 +1,6 @@
 import { Routes, Route, BrowserRouter, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import api from "./services/api";
 
 import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
@@ -15,9 +16,10 @@ import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 
 function AppContent() {
   const navigate = useNavigate();
-  
+
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("token"));
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("user")) || { name: "", email: "", role: "" });
+  const [hospitals, setHospitals] = useState([]);
   const [activeTab, setActiveTab] = useState(() => {
     const path = window.location.pathname;
     if (path.includes("hospitals")) return "Hospitals";
@@ -35,6 +37,39 @@ function AppContent() {
       Revenue: "/super-admin/revenue"
     };
     navigate(paths[tab]);
+  };
+
+  useEffect(() => {
+
+    if (user?.role === "super_admin") {
+      fetchHospitals();
+    }
+
+  }, [user]);
+
+  const fetchHospitals = async () => {
+
+    try {
+
+      const token = localStorage.getItem("token");
+
+      const response = await api.get(
+        "/super-admin/hospitals",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.data.success) {
+        setHospitals(response.data.data);
+      }
+
+    } catch (error) {
+      console.error(error);
+    }
+
   };
 
   return (
@@ -63,7 +98,17 @@ function AppContent() {
             }
           />
           <Route path="/settings" element={<UserSettings userName={user?.name} />} />
-          <Route path="/super-admin/:tab" element={<SuperAdminDashboard activeTab={activeTab} onNavigate={handleSuperAdminNav} />} />
+          <Route
+            path="/super-admin/:tab"
+            element={
+              <SuperAdminDashboard
+                activeTab={activeTab}
+                hospitals={hospitals}
+                fetchHospitals={fetchHospitals}
+                onNavigate={handleSuperAdminNav}
+              />
+            }
+          />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
           <Route path="/staff/dashboard" element={<StaffDashboard />} />
