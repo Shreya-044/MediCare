@@ -12,6 +12,7 @@ import StaffDashboard from "./pages/StaffDashboard";
 import UserProfile from "./pages/UserProfile";
 import UserSettings from "./pages/UserSettings";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
+import AppointmentForm from "./pages/AppointmentForm";
 
 function AppContent() {
   const navigate = useNavigate();
@@ -115,6 +116,7 @@ function AppContent() {
           <Route path="/admin/patients" element={<AdminDashboard activeTab="Patients" onNavigate={handleAdminNav} />} />
           <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
           <Route path="/staff/dashboard" element={<StaffDashboard />} />
+          <Route path="/appointment/:hospitalId" element={<AppointmentForm />} />
         </Routes>
       </main>
       <Footer />
