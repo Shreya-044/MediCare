@@ -6,11 +6,11 @@ def hospital_schema(data):
         "hospital_name": data["hospital_name"],
         "email": data["email"],
         "phone": data["phone"],
+        "emergency_phone": data["emergency_phone"],
         "address": data["address"],
         "city": data["city"],
         "state": data["state"],
         "pincode": data["pincode"],
-        "subscription": data.get("subscription", "Free"),
         "status": "active",
         "revenue": 0,
         "created_at": datetime.now(timezone.utc)

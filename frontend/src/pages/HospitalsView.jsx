@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from "react";
 import { FiTrash2, FiPlus, FiEdit2, FiSave, FiMapPin, FiPhone, FiMail, FiAlertCircle, FiX } from 'react-icons/fi';
+import api from "../services/api";
 
 export default function HospitalsView() {
   const [hospitals, setHospitals] = useState([]);
@@ -7,9 +8,31 @@ export default function HospitalsView() {
   const [editingId, setEditingId] = useState(null);
   const [editValues, setEditValues] = useState({});
   const [formData, setFormData] = useState({
-    hospital_name: '', email: '', phone: '', emergency_phone: '', 
+    hospital_name: '', email: '', phone: '', emergency_phone: '',
     address: '', city: '', state: '', pincode: ''
   });
+
+  useEffect(() => {
+    fetchHospitals();
+  }, []);
+
+  const fetchHospitals = async () => {
+    try {
+      const token = localStorage.getItem("token");
+
+      const response = await api.get("/super-admin/hospitals", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.data.success) {
+        setHospitals(response.data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching hospitals:", error);
+    }
+  };
 
   const StatusToggle = ({ status, onToggle }) => (
     <button onClick={onToggle} className={`relative flex items-center h-7 w-16 rounded-full transition-colors duration-300 ${status === 'active' ? 'bg-green-500' : 'bg-gray-300'}`}>
@@ -18,20 +41,49 @@ export default function HospitalsView() {
     </button>
   );
 
-  const saveHospital = () => {
-    setHospitals([...hospitals, { ...formData, id: Date.now(), status: 'active', revenue: 0, created_at: new Date().toISOString() }]);
-    setShowForm(false);
-    setFormData({ hospital_name: '', email: '', phone: '', emergency_phone: '', address: '', city: '', state: '', pincode: '' });
+  const saveHospital = async () => {
+    try {
+      const token = localStorage.getItem("token");
+
+      const response = await api.post(
+        "/super-admin/add-hospital",
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.data.success) {
+        fetchHospitals();
+
+        setShowForm(false);
+
+        setFormData({
+          hospital_name: "",
+          email: "",
+          phone: "",
+          emergency_phone: "",
+          address: "",
+          city: "",
+          state: "",
+          pincode: "",
+        });
+      }
+    } catch (err) {
+      console.log(err);
+    }
   };
 
-  const startEdit = (h) => { setEditingId(h.id); setEditValues(h); };
-  const saveEdit = (id) => { setHospitals(hospitals.map(h => h.id === id ? { ...h, ...editValues } : h)); setEditingId(null); };
+  const startEdit = (h) => { setEditingId(h._id); setEditValues(h); };
+  const saveEdit = (_id) => { setHospitals(hospitals.map(h => h._id === _id ? { ...h, ...editValues } : h)); setEditingId(null); };
 
   // Helper to render an editable field with a label
   const EditField = ({ label, field }) => (
     <div className="mb-2">
       <label className="text-[9px] font-black text-gray-400 uppercase tracking-wider ml-1">{label}</label>
-      <input className="w-full border border-gray-200 p-1.5 rounded-lg text-xs outline-none focus:ring-1 focus:ring-[#0b645b]" value={editValues[field]} onChange={e => setEditValues({...editValues, [field]: e.target.value})} />
+      <input className="w-full border border-gray-200 p-1.5 rounded-lg text-xs outline-none focus:ring-1 focus:ring-[#0b645b]" value={editValues[field]} onChange={e => setEditValues({ ...editValues, [field]: e.target.value })} />
     </div>
   );
 
@@ -54,7 +106,7 @@ export default function HospitalsView() {
             {Object.keys(formData).map((key) => (
               <div key={key}>
                 <label className="text-[10px] font-bold text-gray-500 uppercase ml-1">{key.replace('_', ' ')}</label>
-                <input value={formData[key]} className="w-full p-2.5 text-sm rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-[#0b645b]" onChange={e => setFormData({...formData, [key]: e.target.value})} />
+                <input value={formData[key]} className="w-full p-2.5 text-sm rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-[#0b645b]" onChange={e => setFormData({ ...formData, [key]: e.target.value })} />
               </div>
             ))}
             <button onClick={saveHospital} className="col-span-2 md:col-span-4 bg-[#0b645b] text-white py-3 rounded-xl font-bold hover:bg-[#084d46]">Save Hospital</button>
@@ -69,9 +121,9 @@ export default function HospitalsView() {
           </thead>
           <tbody className="divide-y divide-gray-100">
             {hospitals.map(h => (
-              <tr key={h.id} className="hover:bg-gray-50/50">
+              <tr key={h._id} className="hover:bg-gray-50/50">
                 <td className="py-6">
-                  {editingId === h.id ? (
+                  {editingId === h._id ? (
                     <div className="w-64">
                       <EditField label="Name" field="hospital_name" />
                       <EditField label="Email" field="email" />
@@ -81,13 +133,13 @@ export default function HospitalsView() {
                   ) : (
                     <div>
                       <p className="font-black text-gray-900">{h.hospital_name}</p>
-                      <div className="flex items-center gap-2 text-xs text-gray-500 mt-1"><FiMail size={12}/>{h.email}</div>
-                      <div className="flex items-center gap-2 text-xs text-gray-500 mt-1"><FiPhone size={12}/>{h.phone}</div>
+                      <div className="flex items-center gap-2 text-xs text-gray-500 mt-1"><FiMail size={12} />{h.email}</div>
+                      <div className="flex items-center gap-2 text-xs text-gray-500 mt-1"><FiPhone size={12} />{h.phone}</div>
                     </div>
                   )}
                 </td>
                 <td className="py-6 text-xs text-gray-600">
-                  {editingId === h.id ? (
+                  {editingId === h._id ? (
                     <div className="w-64">
                       <EditField label="Address" field="address" />
                       <EditField label="City" field="city" />
@@ -96,23 +148,23 @@ export default function HospitalsView() {
                     </div>
                   ) : (
                     <div className="space-y-1">
-                      <p className="flex items-center gap-2"><FiMapPin size={12}/>{h.address}, {h.city}</p>
+                      <p className="flex items-center gap-2"><FiMapPin size={12} />{h.address}, {h.city}</p>
                       <p className="text-[10px] uppercase font-bold text-gray-400">Pincode: {h.pincode} | State: {h.state}</p>
-                      <p className="flex items-center gap-2 text-red-500"><FiAlertCircle size={12}/> {h.emergency_phone}</p>
+                      <p className="flex items-center gap-2 text-red-500"><FiAlertCircle size={12} /> {h.emergency_phone}</p>
                     </div>
                   )}
                 </td>
-                <td className="py-6"><StatusToggle status={h.status} onToggle={() => setHospitals(hospitals.map(i => i.id === h.id ? {...i, status: i.status === 'active' ? 'inactive' : 'active'} : i))} /></td>
+                <td className="py-6"><StatusToggle status={h.status} onToggle={() => setHospitals(hospitals.map(i => i._id === h._id ? { ...i, status: i.status === 'active' ? 'inactive' : 'active' } : i))} /></td>
                 <td className="py-6 text-center">
-                  {editingId === h.id ? (
+                  {editingId === h._id ? (
                     <div className="flex gap-2 justify-center">
-                        <button onClick={() => saveEdit(h.id)} className="bg-green-600 text-white p-2 rounded-lg"><FiSave size={16}/></button>
-                        <button onClick={() => setEditingId(null)} className="bg-gray-200 text-gray-600 p-2 rounded-lg"><FiX size={16}/></button>
+                      <button onClick={() => saveEdit(h._id)} className="bg-green-600 text-white p-2 rounded-lg"><FiSave size={16} /></button>
+                      <button onClick={() => setEditingId(null)} className="bg-gray-200 text-gray-600 p-2 rounded-lg"><FiX size={16} /></button>
                     </div>
                   ) : (
                     <div className="flex justify-center gap-2">
-                        <button onClick={() => startEdit(h)} className="text-blue-500 p-2"><FiEdit2 size={16}/></button>
-                        <button onClick={() => setHospitals(hospitals.filter(i => i.id !== h.id))} className="text-red-500 p-2"><FiTrash2 size={16}/></button>
+                      <button onClick={() => startEdit(h)} className="text-blue-500 p-2"><FiEdit2 size={16} /></button>
+                      <button onClick={() => setHospitals(hospitals.filter(i => i._id !== h._id))} className="text-red-500 p-2"><FiTrash2 size={16} /></button>
                     </div>
                   )}
                 </td>
