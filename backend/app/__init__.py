@@ -31,5 +31,6 @@ def create_app():
         patient_bp,
         url_prefix="/api"
     )
+    
 
     return app

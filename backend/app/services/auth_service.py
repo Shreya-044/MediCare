@@ -22,7 +22,12 @@ def login_user(email, password):
             "message": "Invalid email or password"
         }, 401
 
-    token = generate_token(user)
+    token = generate_token({
+        "user_id": str(user["_id"]),
+        "email": user["email"],
+        "role": user["role"],
+        "hospital_id": user.get("hospital_id")
+    })
 
     response = {
         "success": True,

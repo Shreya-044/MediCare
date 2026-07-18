@@ -1,16 +1,17 @@
 from datetime import datetime, timezone
-from bson import ObjectId
 
 from app.database import db
 from app.utils.password import hash_password
+from bson import ObjectId
 
-
-def create_doctor(data, hospital_id):
+def create_staff(data, hospital_id):
 
     users = db["users"]
 
     # Check if email already exists
-    existing = users.find_one({"email": data["email"]})
+    existing = users.find_one({
+        "email": data["email"]
+    })
 
     if existing:
         return {
@@ -18,118 +19,127 @@ def create_doctor(data, hospital_id):
             "message": "Email already exists."
         }, 400
 
-    doctor = {
+    # Check maximum 2 active staff members
+    staff_count = users.count_documents({
+        "role": "staff",
+        "hospital_id": hospital_id,
+        "status": "active"
+    })
+
+    if staff_count >= 2:
+        return {
+            "success": False,
+            "message": "Only 2 staff members are allowed per hospital."
+        }, 400
+
+    staff = {
         "name": data["name"],
         "email": data["email"],
         "password": hash_password(data["password"]),
-        "role": "doctor",
+        "role": "staff",
         "hospital_id": hospital_id,
-        "department": data["department"],
         "designation": data["designation"],
         "status": "active",
         "created_at": datetime.now(timezone.utc)
     }
 
-    result = users.insert_one(doctor)
+    result = users.insert_one(staff)
 
     return {
         "success": True,
-        "message": "Doctor created successfully.",
-        "doctor_id": str(result.inserted_id)
+        "message": "Staff created successfully.",
+        "staff_id": str(result.inserted_id)
     }, 201
 
-def get_all_doctors(hospital_id):
+def get_all_staff(hospital_id):
 
     users = db["users"]
 
-    doctors = users.find({
-        "role": "doctor",
+    staff = users.find({
+        "role": "staff",
         "hospital_id": hospital_id,
         "status": "active"
     })
 
-    doctor_list = []
+    staff_list = []
 
-    for doctor in doctors:
+    for member in staff:
 
-        doctor_list.append({
-            "_id": str(doctor["_id"]),
-            "name": doctor["name"],
-            "email": doctor["email"],
-            "department": doctor["department"],
-            "designation": doctor["designation"],
-            "hospital_id": doctor["hospital_id"],
-            "status": doctor["status"],
-            "created_at": doctor["created_at"]
+        staff_list.append({
+            "_id": str(member["_id"]),
+            "name": member["name"],
+            "email": member["email"],
+            "designation": member["designation"],
+            "hospital_id": member["hospital_id"],
+            "status": member["status"],
+            "created_at": member["created_at"]
         })
 
     return {
         "success": True,
-        "count": len(doctor_list),
-        "data": doctor_list
+        "count": len(staff_list),
+        "data": staff_list
     }, 200
 
-def get_doctor_by_id(doctor_id, hospital_id):
+def get_staff_by_id(staff_id, hospital_id):
 
     users = db["users"]
 
     try:
 
-        doctor = users.find_one({
-            "_id": ObjectId(doctor_id),
-            "role": "doctor",
+        staff = users.find_one({
+            "_id": ObjectId(staff_id),
+            "role": "staff",
             "hospital_id": hospital_id,
             "status": "active"
         })
 
-        if not doctor:
+        if not staff:
             return {
                 "success": False,
-                "message": "Doctor not found."
+                "message": "Staff member not found."
             }, 404
 
         return {
             "success": True,
             "data": {
-                "_id": str(doctor["_id"]),
-                "name": doctor["name"],
-                "email": doctor["email"],
-                "department": doctor["department"],
-                "designation": doctor["designation"],
-                "hospital_id": doctor["hospital_id"],
-                "status": doctor["status"],
-                "created_at": doctor["created_at"]
+                "_id": str(staff["_id"]),
+                "name": staff["name"],
+                "email": staff["email"],
+                "designation": staff["designation"],
+                "hospital_id": staff["hospital_id"],
+                "status": staff["status"],
+                "created_at": staff["created_at"]
             }
         }, 200
 
     except Exception:
         return {
             "success": False,
-            "message": "Invalid Doctor ID."
+            "message": "Invalid Staff ID."
         }, 400
-
-def update_doctor(doctor_id, hospital_id, data):
+    
+def update_staff(staff_id, hospital_id, data):
 
     users = db["users"]
 
     try:
 
-        doctor = users.find_one({
-            "_id": ObjectId(doctor_id),
-            "role": "doctor",
+        staff = users.find_one({
+            "_id": ObjectId(staff_id),
+            "role": "staff",
             "hospital_id": hospital_id
         })
 
-        if not doctor:
+        if not staff:
             return {
                 "success": False,
-                "message": "Doctor not found."
+                "message": "Staff member not found."
             }, 404
 
         allowed_fields = [
             "name",
             "email",
-            "department",
             "designation",
             "status"
         ]
@@ -146,12 +156,12 @@ def update_doctor(doctor_id, hospital_id, data):
                 "message": "No fields provided for update."
             }, 400
 
-        # Check duplicate email
+        # Prevent duplicate email
         if "email" in update_data:
 
             existing = users.find_one({
                 "email": update_data["email"],
-                "_id": {"$ne": ObjectId(doctor_id)}
+                "_id": {"$ne": ObjectId(staff_id)}
             })
 
             if existing:
@@ -162,7 +172,7 @@ def update_doctor(doctor_id, hospital_id, data):
 
         users.update_one(
             {
-                "_id": ObjectId(doctor_id)
+                "_id": ObjectId(staff_id)
             },
             {
                 "$set": update_data
@@ -171,37 +181,37 @@ def update_doctor(doctor_id, hospital_id, data):
 
         return {
             "success": True,
-            "message": "Doctor updated successfully."
+            "message": "Staff updated successfully."
         }, 200
 
     except Exception:
 
         return {
             "success": False,
-            "message": "Invalid Doctor ID."
+            "message": "Invalid Staff ID."
         }, 400
-
-def deactivate_doctor(doctor_id, hospital_id):
+    
+def deactivate_staff(staff_id, hospital_id):
 
     users = db["users"]
 
     try:
 
-        doctor = users.find_one({
-            "_id": ObjectId(doctor_id),
-            "role": "doctor",
+        staff = users.find_one({
+            "_id": ObjectId(staff_id),
+            "role": "staff",
             "hospital_id": hospital_id
         })
 
-        if not doctor:
+        if not staff:
             return {
                 "success": False,
-                "message": "Doctor not found."
+                "message": "Staff member not found."
             }, 404
 
         users.update_one(
             {
-                "_id": ObjectId(doctor_id)
+                "_id": ObjectId(staff_id)
             },
             {
                 "$set": {
@@ -212,12 +222,12 @@ def deactivate_doctor(doctor_id, hospital_id):
 
         return {
             "success": True,
-            "message": "Doctor deactivated successfully."
+            "message": "Staff deactivated successfully."
         }, 200
 
     except Exception:
 
         return {
             "success": False,
-            "message": "Invalid Doctor ID."
+            "message": "Invalid Staff ID."
         }, 400
