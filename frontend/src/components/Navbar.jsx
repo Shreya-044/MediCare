@@ -13,11 +13,23 @@ const Navbar = ({ isLoggedIn, setIsLoggedIn, user }) => {
   const navigate = useNavigate();
   const isActive = (tabName) => {
     const path = location.pathname;
-    const tab = tabName.toLowerCase();
-    if (tab === "dashboard") {
-      return path.includes("dashboard");
-    }
-    return path.includes(tab);
+
+    const tabPathMap = {
+      "Home": "/dashboard",
+      "Dashboard": "/dashboard",
+      "My Appointments": "/appointments",
+      "My Reports": "/reports",
+      "Hospitals": "/super-admin/hospitals",
+      "Admins": "/super-admin/admins",
+      "Revenue": "/super-admin/revenue",
+      "Doctors": "/admin/doctors",
+      "Staff": "/admin/staff",
+      "Patients": "/admin/patients",
+      "Appointments": "/appointments",
+      "Patient Files": "/patients"
+    };
+
+    return path === tabPathMap[tabName] || (tabName === "Dashboard" && path.includes("dashboard"));
   };
   const [dropdown, setDropdown] = useState(false);
   const loggedInUser = user || JSON.parse(localStorage.getItem("user") || "null");
@@ -126,7 +138,19 @@ const Navbar = ({ isLoggedIn, setIsLoggedIn, user }) => {
           navigate("/staff/dashboard");
       }
     } else {
-      navigate("/dashboard");
+      switch (tab) {
+        case "Home": 
+          navigate("/dashboard"); 
+          break;
+        case "My Appointments": 
+          navigate("/appointments"); 
+          break;
+        case "My Reports": 
+          navigate("/reports"); 
+          break;
+        default: 
+          navigate("/dashboard");
+      }
     }
   };
 

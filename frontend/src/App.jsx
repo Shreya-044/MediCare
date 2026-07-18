@@ -14,12 +14,17 @@ import UserSettings from "./pages/UserSettings";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import AppointmentForm from "./pages/AppointmentForm";
 import { useLocation } from "react-router-dom";
+import PatientDashboard from "./pages/PatientDashboard";
+import PatientAppointment from "./pages/PatientAppointment";
+import PatientReport from "./pages/PatientReport";
 
 function AppContent() {
   const navigate = useNavigate();
   const [hospitals, setHospitals] = useState([]);
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("token"));
-  const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("user")) || { role: "" });
+  const [user, setUser] = useState(
+    () => JSON.parse(localStorage.getItem("user")) || { role: "" },
+  );
   const [activeTab, setActiveTab] = useState("Dashboard");
   const location = useLocation();
 
@@ -28,6 +33,10 @@ function AppContent() {
     if (path.includes("hospitals")) setActiveTab("Hospitals");
     else if (path.includes("admins")) setActiveTab("Admins");
     else if (path.includes("revenue")) setActiveTab("Revenue");
+    else if (path.includes("appointments")) setActiveTab("My Appointments");
+    else if (path.includes("reports")) setActiveTab("My Reports");
+    else if (path === "/dashboard") setActiveTab("Dashboard");
+    else if (path === "/") setActiveTab("Home");
     else setActiveTab("Dashboard");
   }, [location]);
 
@@ -37,7 +46,7 @@ function AppContent() {
       Dashboard: "/super-admin/dashboard",
       Hospitals: "/super-admin/hospitals",
       Admins: "/super-admin/admins",
-      Revenue: "/super-admin/revenue"
+      Revenue: "/super-admin/revenue",
     };
     navigate(paths[tab]);
   };
@@ -54,7 +63,7 @@ function AppContent() {
       Dashboard: "/admin/dashboard",
       Doctors: "/admin/doctors",
       Staff: "/admin/staff",
-      Patients: "/admin/patients"
+      Patients: "/admin/patients",
     };
     navigate(paths[tab]);
   };
@@ -62,14 +71,11 @@ function AppContent() {
   const fetchHospitals = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await api.get(
-        "/super-admin/hospitals",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await api.get("/super-admin/hospitals", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       if (response.data.success) {
         setHospitals(response.data.data);
       }
@@ -89,8 +95,23 @@ function AppContent() {
       <main className="grow">
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login onLogin={(u) => { setIsLoggedIn(true); setUser(u); }} />} />
-          <Route path="/cms-login" element={<CMSLogin setIsLoggedIn={setIsLoggedIn} setUser={setUser} />} />
+          <Route
+            path="/login"
+            element={
+              <Login
+                onLogin={(u) => {
+                  setIsLoggedIn(true);
+                  setUser(u);
+                }}
+              />
+            }
+          />
+          <Route
+            path="/cms-login"
+            element={
+              <CMSLogin setIsLoggedIn={setIsLoggedIn} setUser={setUser} />
+            }
+          />
           <Route
             path="/profile"
             element={
@@ -101,7 +122,10 @@ function AppContent() {
               />
             }
           />
-          <Route path="/settings" element={<UserSettings userName={user?.name} />} />
+          <Route
+            path="/settings"
+            element={<UserSettings userName={user?.name} />}
+          />
           <Route
             path="/super-admin/:tab"
             element={
@@ -113,13 +137,59 @@ function AppContent() {
               />
             }
           />
-          <Route path="/admin/dashboard" element={<AdminDashboard activeTab="Dashboard" onNavigate={handleAdminNav} />} />
-          <Route path="/admin/doctors" element={<AdminDashboard activeTab="Doctors" onNavigate={handleAdminNav} />} />
-          <Route path="/admin/staff" element={<AdminDashboard activeTab="Staff" onNavigate={handleAdminNav} />} />
-          <Route path="/admin/patients" element={<AdminDashboard activeTab="Patients" onNavigate={handleAdminNav} />} />
+          <Route
+            path="/admin/dashboard"
+            element={
+              <AdminDashboard
+                activeTab="Dashboard"
+                onNavigate={handleAdminNav}
+              />
+            }
+          />
+          <Route
+            path="/admin/doctors"
+            element={
+              <AdminDashboard activeTab="Doctors" onNavigate={handleAdminNav} />
+            }
+          />
+          <Route
+            path="/admin/staff"
+            element={
+              <AdminDashboard activeTab="Staff" onNavigate={handleAdminNav} />
+            }
+          />
+          <Route
+            path="/admin/patients"
+            element={
+              <AdminDashboard
+                activeTab="Patients"
+                onNavigate={handleAdminNav}
+              />
+            }
+          />
           <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
           <Route path="/staff/dashboard" element={<StaffDashboard />} />
-          <Route path="/appointment/:hospitalId" element={<AppointmentForm />} />
+          <Route
+            path="/appointment/:hospitalId"
+            element={<AppointmentForm />}
+          />
+
+          <Route
+            path="/dashboard"
+            element={
+              <PatientDashboard
+                activeTab="Dashboard"
+                onNavigate={(tab) => {
+                  if (tab === "My Appointments") navigate("/appointments");
+                  else if (tab === "My Reports") navigate("/reports");
+                  else navigate("/dashboard");
+                }}
+              />
+            }
+          />
+          <Route path="/appointments" element={<PatientAppointment />} />
+          <Route path="/reports" element={<PatientReport />} />
+
         </Routes>
       </main>
       <Footer />
