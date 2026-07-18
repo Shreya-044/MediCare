@@ -12,98 +12,58 @@ export default function CMSLogin({
   const [showPopup, setShowPopup] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   const [loading, setLoading] = useState(false);
-
   const [error, setError] = useState("");
-
   const handleSubmit = async (e) => {
-
     e.preventDefault();
-
     setLoading(true);
     setError("");
-
     try {
-
       const response = await api.post("/auth/login", {
         email,
         password
       });
 
       if (response.data.success) {
-
         const user = response.data.user;
         setUser(user);
-
         setIsLoggedIn(true);
 
         localStorage.setItem("token", response.data.token);
-
         localStorage.setItem("user", JSON.stringify(user));
 
         setShowPopup(true);
-
         setTimeout(() => {
 
           if (user.role === "super_admin") {
-
             navigate("/super-admin/dashboard");
-
           }
-
           else if (user.role === "admin") {
-
             navigate("/admin/dashboard");
-
           }
-
           else if (user.role === "doctor") {
-
             navigate("/doctor/dashboard");
-
           }
-
           else if (user.role === "staff") {
-
             navigate("/staff/dashboard");
-
           }
-
           else {
-
             setError("Unauthorized User");
-
           }
-
         }, 1200);
-
       }
-
     }
-
     catch (err) {
-
       if (err.response) {
-
         setError(err.response.data.message);
-
       }
-
       else {
-
         setError("Server not responding.");
-
       }
-
     }
-
     finally {
-
       setLoading(false);
-
     }
-
   };
   return (
     <div className="min-h-screen bg-cover bg-center relative flex flex-col items-center justify-center px-4 -mt-8"
