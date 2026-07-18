@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { Link, useNavigate } from "react-router-dom";
 import {
   FiUser,
@@ -7,15 +8,15 @@ import {
   FiUserCheck,
 } from "react-icons/fi";
 
-const Navbar = ({
-  isLoggedIn,
-  setIsLoggedIn,
-  user,
-  activeTab,
-  setActiveTab,
-}) => {
-  const [dropdown, setDropdown] = useState(false);
+const Navbar = ({ isLoggedIn, setIsLoggedIn, user }) => {
+  const location = useLocation();
   const navigate = useNavigate();
+  const isActive = (tabName) => {
+    const path = location.pathname;
+    if (tabName === "Dashboard") return path.includes("dashboard");
+    return path.includes(tabName.toLowerCase());
+  };
+  const [dropdown, setDropdown] = useState(false);
   const loggedInUser =
     user || JSON.parse(localStorage.getItem("user") || "null");
 
@@ -77,8 +78,6 @@ const Navbar = ({
   };
 
   const handleNavigation = (tab) => {
-    setActiveTab(tab);
-
     if (role === "super_admin") {
       switch (tab) {
         case "Dashboard":
@@ -100,24 +99,13 @@ const Navbar = ({
         default:
           navigate("/super-admin/dashboard");
       }
-    }
-
-    else if (role === "admin") {
+    } else if (role === "admin") {
       switch (tab) {
-        case "Dashboard":
-          navigate("/admin/dashboard");
-          break;
-        case "Doctors":
-          navigate("/admin/doctors");
-          break;
-        case "Staff":
-          navigate("/admin/staff");
-          break;
-        case "Patients":
-          navigate("/admin/patients");
-          break;
-        default:
-          navigate("/admin/dashboard");
+        case "Dashboard": navigate("/admin/dashboard"); break;
+        case "Doctors": navigate("/admin/doctors"); break;
+        case "Staff": navigate("/admin/staff"); break;
+        case "Patients": navigate("/admin/patients"); break;
+        default: navigate("/admin/dashboard");
       }
     } else if (role === "doctor") {
       switch (tab) {
@@ -187,10 +175,11 @@ const Navbar = ({
                 <button
                   key={tab}
                   onClick={() => handleNavigation(tab)}
-                  className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition ${activeTab === tab
-                    ? "bg-[#0b645b] text-white shadow-md"
-                    : "text-gray-500 hover:text-gray-900"
-                    }`}
+                  className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition ${
+                    isActive(tab) // Use the helper function here
+                      ? "bg-[#0b645b] text-white shadow-md"
+                      : "text-gray-500 hover:text-gray-900"
+                  }`}
                 >
                   {tab}
                 </button>
