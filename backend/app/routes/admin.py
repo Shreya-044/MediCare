@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify, g
 
 from app.middleware.jwt_required import jwt_required
 from app.middleware.role_required import role_required
+from app.services.admin_service import get_dashboard_stats
 
 from app.services.staff_service import (
     create_staff,
@@ -200,5 +201,16 @@ def deactivate_staff_route(staff_id):
         staff_id,
         hospital_id
     )
+
+    return jsonify(response), status
+
+@admin_bp.route("/dashboard-stats", methods=["GET"])
+@jwt_required
+@role_required("admin")
+def dashboard_stats():
+
+    hospital_id = g.current_user["hospital_id"]
+
+    response, status = get_dashboard_stats(hospital_id)
 
     return jsonify(response), status

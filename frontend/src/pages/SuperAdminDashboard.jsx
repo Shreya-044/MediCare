@@ -2,6 +2,8 @@ import { FiArrowRight } from 'react-icons/fi';
 import HospitalsView from './HospitalsView';
 import AdminsView from './AdminsView';
 import RevenueView from './RevenueView';
+import { useState, useEffect } from "react";
+import api from "../services/api";
 
 export default function SuperAdminDashboard({
   activeTab = "Dashboard",
@@ -10,9 +12,25 @@ export default function SuperAdminDashboard({
   onNavigate,
 }) {
 
-  const totalHospitals = hospitals.length;
-  const activeHospitals = hospitals.filter(h => h.status === 'active').length;
-  const totalRevenue = hospitals.reduce((sum, h) => sum + (parseFloat(h.revenue) || 0), 0);
+  const [stats, setStats] = useState({
+    total_hospitals: 0,
+    active_admins: 0,
+    total_revenue: 0,
+  });
+
+  useEffect(() => {
+    fetchDashboardStats();
+  }, []);
+
+  const fetchDashboardStats = async () => {
+    try {
+      const response = await api.get("/super-admin/dashboard-stats");
+
+      setStats(response.data.data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   const renderContent = () => {
     switch (activeTab) {
@@ -29,7 +47,9 @@ export default function SuperAdminDashboard({
                 <div className="flex justify-between items-start">
                   <div>
                     <p className="text-xs font-bold opacity-80 uppercase">Total Hospitals</p>
-                    <p className="text-4xl font-black mt-2">{totalHospitals}</p>
+                    <p className="text-4xl font-black mt-2">
+                      {stats.total_hospitals}
+                    </p>
                   </div>
                   <div className="bg-white/10 p-2 rounded-full group-hover:bg-white/20 transition-colors">
                     <FiArrowRight size={20} />
@@ -37,24 +57,26 @@ export default function SuperAdminDashboard({
                 </div>
               </button>
 
-                {/* Active Admins Card */}
-                <button
-                  onClick={() => onNavigate("Admins")}
-                  className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm text-left transition-transform hover:scale-[1.02] active:scale-95 group flex justify-between items-start"
-                >
-                  <div>
-                    <p className="text-xs font-bold text-gray-400 uppercase">Active Admins</p>
-                    <p className="text-4xl font-black mt-2 text-gray-900">
-                      0
-                    </p>
-                  </div>
-                  <div className="bg-gray-100 p-2 rounded-full group-hover:bg-gray-200 transition-colors text-gray-600">
-                    <FiArrowRight size={20} />
-                  </div>
-                </button>
+              {/* Active Admins Card */}
+              <button
+                onClick={() => onNavigate("Admins")}
+                className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm text-left transition-transform hover:scale-[1.02] active:scale-95 group flex justify-between items-start"
+              >
+                <div>
+                  <p className="text-xs font-bold text-gray-400 uppercase">Active Admins</p>
+                  <p className="text-4xl font-black mt-2 text-gray-900">
+                    {stats.active_admins}
+                  </p>
+                </div>
+                <div className="bg-gray-100 p-2 rounded-full group-hover:bg-gray-200 transition-colors text-gray-600">
+                  <FiArrowRight size={20} />
+                </div>
+              </button>
               <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
                 <p className="text-xs font-bold text-gray-400 uppercase">Total Revenue</p>
-                <p className="text-4xl font-black mt-2 text-gray-900">${totalRevenue.toLocaleString()}</p>
+                <p className="text-4xl font-black mt-2 text-gray-900">
+                  ${stats.total_revenue.toLocaleString()}
+                </p>
               </div>
             </div>
 

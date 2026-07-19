@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 
 from app.middleware.jwt_required import jwt_required
 from app.middleware.role_required import role_required
+from app.services.super_admin_service import get_dashboard_stats
 
 from app.services.user_service import (
     create_admin,
@@ -160,5 +161,14 @@ def update_admin_route(admin_id):
 def delete_admin_route(admin_id):
 
     response, status = delete_admin(admin_id)
+
+    return jsonify(response), status
+
+@super_admin_bp.route("/dashboard-stats", methods=["GET"])
+@jwt_required
+@role_required("super_admin")
+def dashboard_stats():
+
+    response, status = get_dashboard_stats()
 
     return jsonify(response), status
