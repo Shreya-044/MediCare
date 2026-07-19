@@ -32,7 +32,7 @@ export default function PatientDashboard() {
 
   useEffect(() => {
     if (selectedHospital) {
-      const appointmentUrl = `${window.location.origin}/appointment/${selectedHospital._id}`;
+      const appointmentUrl = `https://medicareassist.vercel.app/appointment/${selectedHospital._id}`;
       
       QRCode.toDataURL(appointmentUrl, { width: 200, margin: 1 })
         .then(url => setQrUrl(url))
