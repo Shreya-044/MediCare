@@ -1,5 +1,6 @@
 import { Routes, Route, BrowserRouter, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { Analytics } from "@vercel/analytics/react";
 import api from "./services/api";
 import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
@@ -197,6 +198,7 @@ function AppContent() {
         </Routes>
       </main>
       <Footer />
+      <Analytics />
     </div>
   );
 }
