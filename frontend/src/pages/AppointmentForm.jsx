@@ -132,7 +132,7 @@ export default function AppointmentForm() {
   const filteredDoctors = availableDoctors.filter((doctor) => doctor.department === selectedSpecialty);
   const today = new Date().toISOString().split("T")[0];
 
-  useEffect(() => { if (hospitalId) fetchDoctors(); }, [hospitalId]);
+  useEffect(() => { if (hospitalId) fetchDoctors(); console.log("Auto-opening appointment for:", hospitalId); }, [hospitalId]);
 
   const fetchDoctors = async () => {
     try {

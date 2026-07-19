@@ -32,7 +32,9 @@ export default function Home() {
 
   useEffect(() => {
     if (selectedHospital) {
-      QRCode.toDataURL(selectedHospital._id || "placeholder")
+      const appointmentUrl = `${window.location.origin}/appointment/${selectedHospital._id}`;
+      
+      QRCode.toDataURL(appointmentUrl, { width: 200, margin: 1 })
         .then(url => setQrUrl(url))
         .catch(err => console.error(err));
     }
