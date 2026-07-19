@@ -1,0 +1,10 @@
+{
+  "root": "dist/",
+  "cleanUrls": false,
+  "routes": [
+    {
+      "src": "/**",
+      "dest": "index.html"
+    }
+  ]
+}

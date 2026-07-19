@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { searchHospitals } from "../services/hospitalService";
 import { Link } from "react-router-dom";
-import QRCode from "qrcode";
+import { QRCodeCanvas } from "qrcode.react";
 
 export default function Home() {
   const [search, setSearch] = useState("");
@@ -11,7 +11,6 @@ export default function Home() {
   const [openFaq, setOpenFaq] = useState(null);
   const [selectedHospital, setSelectedHospital] = useState(null);
   const searchRef = useRef(null);
-  const [qrUrl, setQrUrl] = useState("");
   const faqs = [
     { q: "How does Medicare work?", a: "Medicare connects you to qualified doctors through an easy-to-use platform." },
     { q: "How do I choose an online doctor specialist?", a: "Use the search bar to filter by location or specialty." },
@@ -29,16 +28,6 @@ export default function Home() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-
-  useEffect(() => {
-    if (selectedHospital) {
-      const appointmentUrl = `${window.location.origin}/appointment/${selectedHospital._id}`;
-      
-      QRCode.toDataURL(appointmentUrl, { width: 200, margin: 1 })
-        .then(url => setQrUrl(url))
-        .catch(err => console.error(err));
-    }
-  }, [selectedHospital]);
 
   const handleSearch = async (value) => {
     setSearch(value);
@@ -134,17 +123,20 @@ export default function Home() {
 
             {/* QR Section */}
             <div className="text-center flex flex-col items-center shrink-0 pr-2">
-              <Link 
-                to={`/appointment/${selectedHospital._id}`} 
-                className="flex flex-col items-center hover:opacity-80 transition"
-              >
+              <div className="flex flex-col items-center">
                 <div className="w-26 h-26 bg-white border border-gray-200 rounded-lg mb-1 flex items-center justify-center p-1">
-                  <img src={qrUrl} alt="QR Code" className="w-26 h-26" />
+                  <QRCodeCanvas 
+                    // Using the exact Render URL
+                    value={`https://medicare-doctor-appointment-and-queue.onrender.com/appointment/${selectedHospital._id}`} 
+                    size={90}
+                    level={"H"} // High error correction makes it easier to scan
+                    includeMargin={true}
+                  />
                 </div>
                 <p className="text-[9px] font-black text-[#0b645b] uppercase tracking-wider">
                   Scan to book
                 </p>
-              </Link>
+              </div>
             </div>
           </div>
         )}
