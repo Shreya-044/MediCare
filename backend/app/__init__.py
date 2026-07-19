@@ -13,6 +13,14 @@ def create_app():
 
     CORS(app)
 
+    # Root route (Health Check)
+    @app.route("/")
+    def home():
+        return {
+            "status": "running",
+            "message": "MediCare Backend is Live"
+        }
+
     # Authentication Routes
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
 
@@ -28,11 +36,13 @@ def create_app():
         url_prefix="/api/admin"
     )
 
+    # Patient Routes
     app.register_blueprint(
         patient_bp,
         url_prefix="/api"
     )
-    
+
+    # Appointment Routes
     app.register_blueprint(
         appointment_bp,
         url_prefix="/api"
