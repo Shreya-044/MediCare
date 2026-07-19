@@ -26,6 +26,10 @@ def create_doctor(data, hospital_id):
         "hospital_id": hospital_id,
         "department": data["department"],
         "designation": data["designation"],
+        "consultation_fee": data["consultation_fee"],
+        "experience": data["experience"],
+        "rating": 5,
+        "available_slots": data["available_slots"],
         "status": "active",
         "created_at": datetime.now(timezone.utc)
     }
@@ -58,6 +62,10 @@ def get_all_doctors(hospital_id):
             "email": doctor["email"],
             "department": doctor["department"],
             "designation": doctor["designation"],
+            "consultation_fee": doctor["consultation_fee"],
+            "experience": doctor["experience"],
+            "rating": doctor["rating"],
+            "available_slots": doctor["available_slots"],
             "hospital_id": doctor["hospital_id"],
             "status": doctor["status"],
             "created_at": doctor["created_at"]
@@ -96,6 +104,10 @@ def get_doctor_by_id(doctor_id, hospital_id):
                 "email": doctor["email"],
                 "department": doctor["department"],
                 "designation": doctor["designation"],
+                "consultation_fee": doctor["consultation_fee"],
+                "experience": doctor["experience"],
+                "rating": doctor["rating"],
+                "available_slots": doctor["available_slots"],
                 "hospital_id": doctor["hospital_id"],
                 "status": doctor["status"],
                 "created_at": doctor["created_at"]
@@ -131,6 +143,9 @@ def update_doctor(doctor_id, hospital_id, data):
             "email",
             "department",
             "designation",
+            "consultation_fee",
+            "experience",
+            "available_slots",
             "status"
         ]
 

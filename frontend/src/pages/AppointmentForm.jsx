@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import api from "../services/api";
 import {
   FiCheckCircle,
   FiX,
@@ -15,6 +16,7 @@ import {
 
 export default function AppointmentForm() {
   const navigate = useNavigate();
+  const { hospitalId } = useParams();
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
@@ -26,6 +28,8 @@ export default function AppointmentForm() {
     phone: "",
     email: "",
     password: "",
+    dob: "",
+    gender: "",
   });
 
   const [selectedSpecialty, setSelectedSpecialty] = useState(null);
@@ -46,11 +50,13 @@ export default function AppointmentForm() {
     setTimeout(() => setShowPopup(false), 3000);
   };
 
-  const handleBookAppointment = () => {
+  const handleBookAppointment = async () => {
     if (
       !patientData.name ||
       !patientData.phone ||
       !patientData.email ||
+      !patientData.dob ||
+      !patientData.gender ||
       (!isLoggedIn && !patientData.password) ||
       !selectedSpecialty ||
       !selectedDate ||
@@ -60,11 +66,48 @@ export default function AppointmentForm() {
       triggerPopup("Please fill in all required fields.", true);
       return;
     }
-    setIsLoggedIn(true);
-    triggerPopup("Appointment booked & payment processed!");
-    setTimeout(() => {
-      navigate("/login"); 
-    }, 2000);
+    try {
+
+      const response = await api.post(
+        "/patient/book-appointment",
+        {
+          name: patientData.name,
+          email: patientData.email,
+          phone: patientData.phone,
+          password: patientData.password,
+          dob: patientData.dob,
+          gender: patientData.gender,
+
+          doctor_id: selectedDoctor._id,
+
+          appointment_date: selectedDate,
+          appointment_time: selectedTime,
+
+          consultation_fee: selectedDoctor.consultation_fee,
+          platform_fee: PLATFORM_FEE,
+          gst:
+            (selectedDoctor.consultation_fee + PLATFORM_FEE) * GST_RATE,
+          total_amount: Number(
+            calculateTotal(selectedDoctor.consultation_fee)
+          )
+        }
+      );
+
+      triggerPopup(response.data.message);
+
+      setTimeout(() => {
+        navigate("/login");
+      }, 2000);
+
+    }
+    catch (err) {
+      console.log(err.response?.data);
+
+      triggerPopup(
+        err.response?.data?.message || "Something went wrong.",
+        true
+      );
+    }
   };
 
   const specialties = [
@@ -82,25 +125,40 @@ export default function AppointmentForm() {
     { name: "Radiology", icon: "☢️" },
   ];
 
-  const availableDoctors = [
-    {
-      id: 1,
-      name: "Dr. Smith",
-      fee: 500,
-      rating: 4.8,
-      slots: ["09:00 AM", "10:00 AM", "02:00 PM"],
-    },
-    {
-      id: 2,
-      name: "Dr. Jones",
-      fee: 750,
-      rating: 4.5,
-      slots: ["11:00 AM", "03:00 PM"],
-    },
-  ];
-
+  const [availableDoctors, setAvailableDoctors] = useState([]);
+  const filteredDoctors = availableDoctors.filter(
+    (doctor) => doctor.department === selectedSpecialty
+  );
   const today = new Date().toISOString().split("T")[0];
+  useEffect(() => {
+    if (hospitalId) {
+      fetchDoctors();
+    }
+  }, [hospitalId]);
 
+  const fetchDoctors = async () => {
+
+    try {
+
+      const response = await api.get(
+        `/hospital/${hospitalId}/doctors`
+      );
+
+      if (response.data.success) {
+
+        console.log("Doctors API Response:", response.data);
+
+        setAvailableDoctors(response.data.data);
+
+      }
+
+    } catch (err) {
+
+      console.log(err);
+
+    }
+
+  };
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-8 -mt-5">
       {showPopup && (
@@ -126,48 +184,89 @@ export default function AppointmentForm() {
         {/* Patient Details */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
           {[
+
             {
               key: "name",
               label: "Full Name",
               placeholder: "Your Name",
               icon: FiUser,
+              type: "text",
             },
             {
               key: "phone",
               label: "Phone Number",
               placeholder: "+91 XXX XXX XXXX",
               icon: FiPhone,
+              type: "text",
             },
             {
               key: "email",
               label: "Email Address",
               placeholder: "you@example.com",
               icon: FiMail,
+              type: "email",
             },
             {
               key: "password",
               label: "Password",
               placeholder: "••••••••",
               icon: FiLock,
+              type: "password",
+            },
+            {
+              key: "dob",
+              label: "Date of Birth",
+              placeholder: "",
+              icon: FiCalendar,
+              type: "date",
+            },
+            {
+              key: "gender",
+              label: "Gender",
+              placeholder: "",
+              icon: FiUser,
+              type: "select",
+              options: ["Male", "Female", "Other"],
             },
           ].map((f) => (
-            <div key={f.key} className="space-y-1">
-              <label className="text-[11px] font-bold uppercase text-slate-400 ml-1">
-                {f.label}
-              </label>
-              <div className="flex items-center bg-slate-50 border rounded-2xl px-4 py-3">
-                <f.icon className="text-slate-400 mr-3" />
+            <div className="flex items-center bg-slate-50 border rounded-2xl px-4 py-3">
+              <f.icon className="text-slate-400 mr-3" />
+
+              {f.type === "select" ? (
+                <select
+                  disabled={isLoggedIn}
+                  value={patientData[f.key]}
+                  onChange={(e) =>
+                    setPatientData({
+                      ...patientData,
+                      [f.key]: e.target.value,
+                    })
+                  }
+                  className="w-full bg-transparent outline-none text-sm"
+                >
+                  <option value="">Select Gender</option>
+
+                  {f.options.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              ) : (
                 <input
                   disabled={isLoggedIn && f.key !== "password"}
                   value={patientData[f.key]}
                   onChange={(e) =>
-                    setPatientData({ ...patientData, [f.key]: e.target.value })
+                    setPatientData({
+                      ...patientData,
+                      [f.key]: e.target.value,
+                    })
                   }
-                  type={f.key === "password" ? "password" : "text"}
+                  type={f.type}
                   placeholder={f.placeholder}
                   className="w-full bg-transparent outline-none text-sm"
                 />
-              </div>
+              )}
             </div>
           ))}
         </div>
@@ -208,11 +307,16 @@ export default function AppointmentForm() {
               />
             </div>
             <div className="space-y-4">
-              {availableDoctors.map((d) => (
+              {filteredDoctors.length === 0 && (
+                <div className="p-5 rounded-2xl border text-center text-slate-500">
+                  No doctors available for this specialty.
+                </div>
+              )}
+              {filteredDoctors.map((d) => (
                 <button
-                  key={d.id}
+                  key={d._id}
                   onClick={() => setSelectedDoctor(d)}
-                  className={`w-full p-5 rounded-3xl border text-left transition-all ${selectedDoctor?.id === d.id ? "border-teal-600 bg-teal-50" : "border-slate-200"}`}
+                  className={`w-full p-5 rounded-3xl border text-left transition-all ${selectedDoctor?._id === d._id ? "border-teal-600 bg-teal-50" : "border-slate-200"}`}
                 >
                   <div className="flex justify-between font-bold">
                     {d.name}{" "}
@@ -221,7 +325,11 @@ export default function AppointmentForm() {
                     </span>
                   </div>
                   <div className="text-[11px] text-slate-500">
-                    Fee: ₹{d.fee}
+                    {d.designation}
+                  </div>
+
+                  <div className="text-[11px] text-slate-500">
+                    ₹{d.consultation_fee}
                   </div>
                 </button>
               ))}
@@ -238,15 +346,14 @@ export default function AppointmentForm() {
                 <FiClock /> Select Time
               </p>
               <div className="flex gap-3 flex-wrap">
-                {selectedDoctor.slots.map((t) => (
+                {selectedDoctor.available_slots?.map((t) => (
                   <button
                     key={t}
                     onClick={() => setSelectedTime(t)}
-                    className={`px-6 py-3 rounded-xl text-[11px] font-bold border transition-all ${
-                      selectedTime === t
-                        ? "bg-teal-600 text-white border-teal-600 shadow-md"
-                        : "bg-white border-slate-200 hover:border-teal-500"
-                    }`}
+                    className={`px-6 py-3 rounded-xl text-[11px] font-bold border transition-all ${selectedTime === t
+                      ? "bg-teal-600 text-white border-teal-600 shadow-md"
+                      : "bg-white border-slate-200 hover:border-teal-500"
+                      }`}
                   >
                     {t}
                   </button>
@@ -263,7 +370,7 @@ export default function AppointmentForm() {
                 <div className="flex justify-between">
                   <span>Doctor Fee:</span>{" "}
                   <span className="font-bold text-slate-900">
-                    ₹{selectedDoctor.fee}
+                    ₹{selectedDoctor.consultation_fee}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -276,14 +383,14 @@ export default function AppointmentForm() {
                   <span>GST (5%):</span>{" "}
                   <span className="font-bold text-slate-900">
                     ₹
-                    {((selectedDoctor.fee + PLATFORM_FEE) * GST_RATE).toFixed(
+                    {((selectedDoctor.consultation_fee + PLATFORM_FEE) * GST_RATE).toFixed(
                       2,
                     )}
                   </span>
                 </div>
                 <div className="flex justify-between font-black text-slate-900 text-sm pt-2">
                   <span>Total Payable:</span>{" "}
-                  <span>₹{calculateTotal(selectedDoctor.fee)}</span>
+                  <span>₹{calculateTotal(selectedDoctor.consultation_fee)}</span>
                 </div>
               </div>
             </div>
@@ -296,7 +403,7 @@ export default function AppointmentForm() {
             className="px-12 py-4 bg-[#0b645b] text-white rounded-2xl font-black shadow-lg hover:scale-105 active:scale-95 transition-all"
           >
             {isLoggedIn
-              ? `Pay ₹${selectedDoctor ? calculateTotal(selectedDoctor.fee) : "..."} & Confirm`
+              ? `Pay ₹${selectedDoctor ? calculateTotal(selectedDoctor.consultation_fee) : "..."} & Confirm`
               : "Register & Pay"}
           </button>
         </div>

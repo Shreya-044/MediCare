@@ -3,7 +3,9 @@ from flask import request, jsonify
 from app.services.patient_service import search_hospitals
 from app.services.patient_service import (
     register_patient,
-    login_patient
+    login_patient,
+    register_and_book,
+    get_hospital_doctors
 )
 
 patient_bp = Blueprint("patient", __name__)
@@ -76,5 +78,50 @@ def login():
         }), 400
 
     response, status = login_patient(email, password)
+
+    return jsonify(response), status
+
+@patient_bp.route("/patient/book-appointment", methods=["POST"])
+def book_appointment():
+
+    data = request.get_json()
+
+    if not data:
+        return jsonify({
+            "success": False,
+            "message": "Request body is required."
+        }), 400
+
+    required_fields = [
+        "name",
+        "email",
+        "phone",
+        "password",
+        "dob",
+        "gender",
+        "doctor_id",
+        "appointment_date",
+        "appointment_time",
+        "consultation_fee",
+        "platform_fee",
+        "gst",
+        "total_amount"
+    ]
+
+    for field in required_fields:
+        if field not in data or data[field] in [None, ""]:
+            return jsonify({
+                "success": False,
+                "message": f"{field} is required."
+            }), 400
+
+    response, status = register_and_book(data)
+
+    return jsonify(response), status
+
+@patient_bp.route("/hospital/<hospital_id>/doctors", methods=["GET"])
+def hospital_doctors(hospital_id):
+
+    response, status = get_hospital_doctors(hospital_id)
 
     return jsonify(response), status

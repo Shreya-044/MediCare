@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { FiLock, FiUser, FiX, FiArrowRight, FiCheckCircle, FiMail } from "react-icons/fi";
 import { FaHeartbeat } from "react-icons/fa";
-import { useNavigate } from "react-router-dom"; 
+import { useNavigate } from "react-router-dom";
 
 export default function Login(props) {
   const navigate = useNavigate();
@@ -11,33 +11,27 @@ export default function Login(props) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
     const name = e.target.fullName?.value || "Patient";
     const email = e.target.email?.value || "patient@example.com";
-    const password = e.target.password?.value;
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,}$/;
-    
-    if (!passwordRegex.test(password)) {
-      alert("Password must be 8+ chars, with uppercase, lowercase, number, & special symbol.");
-      return;
-    }
 
-    if (password.toLowerCase().includes("password") || (name !== "Patient" && password.toLowerCase().includes(name.toLowerCase()))) {
-      alert("Password cannot contain common words or your name.");
-      return;
-    }
-
+    // Skip all password validation for testing
     setShowPopup(true);
+
     setTimeout(() => {
       setShowPopup(false);
-      props.onLogin(name, email);
+
+      if (props.onLogin) {
+        props.onLogin(name, email);
+      }
+
       navigate("/dashboard");
     }, 2000);
   };
-
   return (
     <div className="min-h-screen bg-cover bg-center relative flex flex-col items-center justify-center px-4 -mt-8"
       style={{ backgroundImage: "url('https://imgs.search.brave.com/UZDCMjtvFnnQwffo_wAW8WPocbZyKdSxkv7AxHBGYik/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9zdGF0/aWMudmVjdGVlenku/Y29tL3N5c3RlbS9y/ZXNvdXJjZXMvdGh1/bWJuYWlscy8wMTIv/NjAyLzc2NC9zbWFs/bC9hYnN0cmFjdC1i/bHVyLWhvc3BpdGFs/LWNvcnJpZG9yLWRl/Zm9jdXNlZC1tZWRp/Y2FsLWJhY2tncm91/bmQtcGhvdG8uanBn')" }}>
-      
+
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
 
       {showPopup && (
@@ -61,7 +55,7 @@ export default function Login(props) {
           </div>
 
           <h1 className="text-center text-2xl font-black text-slate-900">{isRegistering ? "Create Account" : "MediCare Patient"}</h1>
-          
+
           <form onSubmit={handleSubmit} className="mt-8 space-y-5">
             {isRegistering && (
               <div>
@@ -83,14 +77,14 @@ export default function Login(props) {
               <label className="mb-1 ml-1 block text-[9px] font-black uppercase text-gray-400">Password</label>
               <div className="flex items-center rounded-2xl border bg-gray-50 px-4 h-12">
                 <FiLock className="text-gray-400" />
-                <input 
-                  required 
+                <input
+                  required
                   name="password"
-                  type="password" 
-                  minLength="8" 
+                  type="password"
+                  minLength="8"
                   title="Must contain at least 8 characters, including 1 uppercase, 1 lowercase, 1 number, and 1 special symbol."
-                  placeholder="Min 8 chars, 1 number, 1 symbol" 
-                  className="ml-3 w-full bg-transparent outline-none text-xs" 
+                  placeholder="Min 8 chars, 1 number, 1 symbol"
+                  className="ml-3 w-full bg-transparent outline-none text-xs"
                 />
               </div>
             </div>
