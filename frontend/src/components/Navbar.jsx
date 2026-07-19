@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { Link, useNavigate } from "react-router-dom";
+import api from "../services/api";
 import {
   FiUser,
   FiSettings,
@@ -32,7 +33,14 @@ const Navbar = ({ isLoggedIn, setIsLoggedIn, user }) => {
     return path === tabPathMap[tabName] || (tabName === "Dashboard" && path.includes("dashboard"));
   };
   const [dropdown, setDropdown] = useState(false);
-  const loggedInUser = user || JSON.parse(localStorage.getItem("user") || "null");
+  const [loggedInUser, setLoggedInUser] = useState(
+    user || JSON.parse(localStorage.getItem("user") || "null")
+  );
+  useEffect(() => {
+    if (user) {
+      setLoggedInUser(user);
+    }
+  }, [user]);
   const role = loggedInUser?.role;
   const userName = loggedInUser?.name || "User";
   let tabs = [];
@@ -139,16 +147,16 @@ const Navbar = ({ isLoggedIn, setIsLoggedIn, user }) => {
       }
     } else {
       switch (tab) {
-        case "Home": 
-          navigate("/dashboard"); 
+        case "Home":
+          navigate("/dashboard");
           break;
-        case "My Appointments": 
-          navigate("/appointments"); 
+        case "My Appointments":
+          navigate("/appointments");
           break;
-        case "My Reports": 
-          navigate("/reports"); 
+        case "My Reports":
+          navigate("/reports");
           break;
-        default: 
+        default:
           navigate("/dashboard");
       }
     }
@@ -185,11 +193,10 @@ const Navbar = ({ isLoggedIn, setIsLoggedIn, user }) => {
                 <button
                   key={tab}
                   onClick={() => handleNavigation(tab)}
-                  className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition ${
-                    isActive(tab)
-                      ? "bg-[#0b645b] text-white shadow-md"
-                      : "text-gray-500 hover:text-gray-900"
-                  }`}
+                  className={`px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition ${isActive(tab)
+                    ? "bg-[#0b645b] text-white shadow-md"
+                    : "text-gray-500 hover:text-gray-900"
+                    }`}
                 >
                   {tab}
                 </button>
@@ -217,9 +224,9 @@ const Navbar = ({ isLoggedIn, setIsLoggedIn, user }) => {
               {dropdown && (
                 <div className="absolute right-0 mt-3 w-52 bg-white rounded-3xl shadow-2xl border border-gray-100 p-2 z-50">
                   <button onClick={() => {
-                      setDropdown(false);
-                      navigate("/profile");
-                    }}
+                    setDropdown(false);
+                    navigate("/profile");
+                  }}
                     className="flex items-center w-full px-4 py-3 text-xs font-bold text-gray-700 hover:bg-gray-50 rounded-xl transition"
                   >
                     <FiUser className="mr-3 text-[#0b645b]" />

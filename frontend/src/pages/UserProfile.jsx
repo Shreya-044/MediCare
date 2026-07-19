@@ -1,10 +1,14 @@
 import { useState, useEffect, useMemo } from "react";
-import { 
-  FiUser, FiMail, FiPhone, FiEdit, FiSave, FiAlertCircle, 
-  FiActivity, FiShield, FiLayers, FiBriefcase, FiCalendar, FiClock 
+import api from "../services/api";
+import {
+  FiUser, FiMail, FiPhone, FiEdit, FiSave, FiAlertCircle,
+  FiActivity, FiShield, FiLayers, FiBriefcase, FiCalendar, FiClock
 } from "react-icons/fi";
 
-export default function UserProfile({ userName, userEmail, userRole }) {
+export default function UserProfile() {
+  const currentUser = JSON.parse(localStorage.getItem("user"));
+
+  const role = currentUser?.role;
   const [isEditing, setIsEditing] = useState(false);
   const [profile, setProfile] = useState({
     name: "", email: "", phone: "", role: "",
@@ -24,18 +28,101 @@ export default function UserProfile({ userName, userEmail, userRole }) {
     return calculatedAge;
   }, [profile.dob]);
 
+  const fetchProfile = async () => {
+
+    if (!currentUser) return;
+
+    try {
+
+      let response;
+
+      switch (role) {
+
+        case "patient":
+          response = await api.get(`/patient/${currentUser._id}`);
+          break;
+
+        case "doctor":
+          response = await api.get(`/doctor/${currentUser._id}`);
+          break;
+
+        case "staff":
+          response = await api.get(`/staff/${currentUser._id}`);
+          break;
+
+        case "admin":
+          response = await api.get(`/admin/${currentUser._id}`);
+          break;
+
+        case "super_admin":
+          response = await api.get(`/super-admin/${currentUser._id}`);
+          break;
+
+        default:
+          return;
+      }
+
+      setProfile(response.data.data);
+
+      localStorage.setItem(
+        "user",
+        JSON.stringify(response.data.data)
+      );
+
+    } catch (error) {
+      console.log(error);
+    }
+
+  };
   useEffect(() => {
-    setProfile((prev) => ({
-      ...prev,
-      name: userName || prev.name,
-      email: userEmail || prev.email,
-      role: userRole || prev.role,
-    }));
-  }, [userName, userEmail, userRole]);
+
+    const fetchProfile = async () => {
+
+        const currentUser = JSON.parse(localStorage.getItem("user"));
+
+        if (!currentUser) return;
+
+        try {
+
+            let response;
+
+            if (currentUser.role === "patient") {
+
+                response = await api.get(
+                    `/patient/${currentUser._id}`
+                );
+
+                setProfile(response.data.data);
+
+            } else {
+
+                response = await api.get("/auth/profile", {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    },
+                });
+
+                setProfile(response.data.user);
+
+            }
+
+        } catch (err) {
+            console.log(err);
+        }
+
+    };
+
+    fetchProfile();
+
+}, []);
 
   const fields = useMemo(() => {
-    const isAdministrative = userRole === "super_admin" || userRole === "admin";
-    
+    const isAdministrative =
+    role === "super_admin" ||
+    role === "admin" ||
+    role === "doctor" ||
+    role === "staff";
+
     const baseFields = [
       { label: "Full Name", name: "name", icon: <FiUser size={18} />, readOnly: false },
       { label: "Email Address", name: "email", icon: <FiMail size={18} />, readOnly: false },
@@ -57,7 +144,7 @@ export default function UserProfile({ userName, userEmail, userRole }) {
     ];
 
     return isAdministrative ? [...baseFields, ...adminFields] : [...baseFields, ...patientFields];
-  }, [userRole]);
+  }, [role]);
 
   const handleChange = (e) => {
     setProfile(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -72,7 +159,7 @@ export default function UserProfile({ userName, userEmail, userRole }) {
     <div className="max-w-3xl mx-auto px-10 py-10 animate-in fade-in duration-300">
       <div className="flex justify-between items-center mb-8">
         <h2 className="text-2xl font-black text-gray-900">My Profile</h2>
-        <button 
+        <button
           onClick={isEditing ? handleSave : () => setIsEditing(true)}
           className="flex items-center gap-2 px-6 py-2 bg-[#0b645b] text-white rounded-full text-xs font-bold hover:bg-[#084e46] transition shadow-md"
         >
@@ -86,13 +173,13 @@ export default function UserProfile({ userName, userEmail, userRole }) {
             <div className="text-[#0b645b] bg-[#0b645b]/10 p-3 rounded-xl">
               {field.icon}
             </div>
-            
+
             <div className="w-full">
               <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">{field.label}</p>
-              
+
               {isEditing && !field.readOnly ? (
                 field.type === "select" ? (
-                  <select 
+                  <select
                     name={field.name}
                     value={profile[field.name] || ""}
                     onChange={handleChange}
@@ -102,7 +189,7 @@ export default function UserProfile({ userName, userEmail, userRole }) {
                     {field.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                   </select>
                 ) : (
-                  <input 
+                  <input
                     name={field.name}
                     type={field.type || "text"}
                     value={profile[field.name] || ""}

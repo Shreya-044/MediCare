@@ -3,31 +3,53 @@ import { Link } from "react-router-dom";
 import { FiLock, FiUser, FiX, FiArrowRight, FiCheckCircle, FiMail } from "react-icons/fi";
 import { FaHeartbeat } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
+import api from "../services/api";
 
 export default function Login(props) {
   const navigate = useNavigate();
   const [isRegistering, setIsRegistering] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+ const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    const name = e.target.fullName?.value || "Patient";
-    const email = e.target.email?.value || "patient@example.com";
+  const email = e.target.email.value;
+  const password = e.target.password.value;
 
-    // Skip all password validation for testing
+  try {
+    const response = await api.post("/patient/login", {
+      email,
+      password,
+    });
+
+    localStorage.setItem("token", response.data.token);
+
+    localStorage.setItem(
+      "user",
+      JSON.stringify(response.data.patient)
+    );
+
     setShowPopup(true);
 
     setTimeout(() => {
       setShowPopup(false);
 
       if (props.onLogin) {
-        props.onLogin(name, email);
+        props.onLogin(
+          response.data.patient.name,
+          response.data.patient.email
+        );
       }
 
       navigate("/dashboard");
-    }, 2000);
-  };
+    }, 1500);
+
+  } catch (err) {
+    console.log(err.response?.data);
+
+    alert(err.response?.data?.message || "Login failed");
+  }
+};
   return (
     <div className="min-h-screen bg-cover bg-center relative flex flex-col items-center justify-center px-4 -mt-8"
       style={{ backgroundImage: "url('https://imgs.search.brave.com/UZDCMjtvFnnQwffo_wAW8WPocbZyKdSxkv7AxHBGYik/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9zdGF0/aWMudmVjdGVlenku/Y29tL3N5c3RlbS9y/ZXNvdXJjZXMvdGh1/bWJuYWlscy8wMTIv/NjAyLzc2NC9zbWFs/bC9hYnN0cmFjdC1i/bHVyLWhvc3BpdGFs/LWNvcnJpZG9yLWRl/Zm9jdXNlZC1tZWRp/Y2FsLWJhY2tncm91/bmQtcGhvdG8uanBn')" }}>

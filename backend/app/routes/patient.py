@@ -1,11 +1,13 @@
 from flask import Blueprint
 from flask import request, jsonify
 from app.services.patient_service import search_hospitals
+from app.services.patient_service import get_patient_appointments
 from app.services.patient_service import (
     register_patient,
     login_patient,
     register_and_book,
-    get_hospital_doctors
+    get_hospital_doctors,
+    get_patient
 )
 
 patient_bp = Blueprint("patient", __name__)
@@ -123,5 +125,19 @@ def book_appointment():
 def hospital_doctors(hospital_id):
 
     response, status = get_hospital_doctors(hospital_id)
+
+    return jsonify(response), status
+
+@patient_bp.route("/patient/<patient_id>", methods=["GET"])
+def patient_profile(patient_id):
+
+    response, status = get_patient(patient_id)
+
+    return jsonify(response), status
+
+@patient_bp.route("/patient/<patient_id>/appointments", methods=["GET"])
+def patient_appointments(patient_id):
+
+    response, status = get_patient_appointments(patient_id)
 
     return jsonify(response), status

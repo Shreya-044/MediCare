@@ -4,6 +4,8 @@ from app.utils.password import hash_password
 from app.utils.password import verify_password
 from app.utils.jwt import generate_token
 from app.services.appointment_service import book_appointment
+from bson import ObjectId
+from app.database import db
 
 def search_hospitals(query):
 
@@ -143,12 +145,15 @@ def login_patient(email, password):
         "message": "Login successful",
         "token": token,
         "patient": {
-            "id": str(patient["_id"]),
+            "_id": str(patient["_id"]),
             "name": patient["name"],
             "email": patient["email"],
             "phone": patient["phone"],
-            "status": patient["status"]
-        }
+            "dob": patient["dob"],
+            "gender": patient["gender"],
+            "status": patient["status"],
+            "role": "patient"
+            }
     }, 200
 
 def register_and_book(data):
@@ -189,8 +194,6 @@ def register_and_book(data):
 
     return book_appointment(appointment_data)
 
-from bson import ObjectId
-
 def get_hospital_doctors(hospital_id):
 
     doctors = db["users"].find({
@@ -218,3 +221,90 @@ def get_hospital_doctors(hospital_id):
         "count": len(doctor_list),
         "data": doctor_list
     }, 200
+
+def get_patient(patient_id):
+
+    patients = db["patients"]
+
+    patient = patients.find_one(
+        {"_id": ObjectId(patient_id)},
+        {"password": 0}
+    )
+
+    if not patient:
+        return {
+            "success": False,
+            "message": "Patient not found."
+        }, 404
+
+    patient["_id"] = str(patient["_id"])
+
+    return {
+        "success": True,
+        "data": patient
+    }, 200
+
+def get_patient_appointments(patient_id):
+
+    appointments = db["appointments"]
+
+    doctors = db["users"]
+
+    hospitals = db["hospitals"]
+
+    appointment_list = []
+
+    results = appointments.find({
+        "$or": [
+            {"patient_id": ObjectId(patient_id)},
+            {"patient_id": patient_id}
+            ]
+        })
+
+    for appointment in results:
+
+        doctor = doctors.find_one({
+            "_id": ObjectId(appointment["doctor_id"])
+        })
+
+        hospital = hospitals.find_one({
+            "_id": ObjectId(doctor["hospital_id"])
+        })
+
+        appointment_list.append({
+
+    "_id": str(appointment["_id"]),
+
+    "doctor_name": doctor["name"],
+
+    "department": doctor["department"],
+
+    "hospital_name": hospital["hospital_name"],
+
+    "appointment_date": appointment["appointment_date"],
+
+    "appointment_time": appointment["appointment_time"],
+
+    "appointment_status": appointment["appointment_status"],
+
+    "consultation_fee": appointment["consultation_fee"],
+
+    "platform_fee": appointment["platform_fee"],
+
+    "gst": appointment["gst"],
+
+    "total_amount": appointment["total_amount"],
+
+    "patientsAhead": appointment.get("patients_ahead"),
+
+    "expectedWait": appointment.get("expected_wait")
+
+})
+
+    return {
+
+        "success": True,
+
+        "data": appointment_list
+
+    },200
