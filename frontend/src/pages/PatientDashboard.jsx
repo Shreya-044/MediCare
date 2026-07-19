@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from "react";
 import { searchHospitals } from "../services/hospitalService";
-import { Link } from "react-router-dom";
 import { QRCodeCanvas } from "qrcode.react";
 
 export default function PatientDashboard() {

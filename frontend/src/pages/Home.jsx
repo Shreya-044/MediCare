@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from "react";
 import { searchHospitals } from "../services/hospitalService";
-import { Link } from "react-router-dom";
 import { QRCodeCanvas } from "qrcode.react";
 
 export default function Home() {
@@ -125,11 +124,10 @@ export default function Home() {
             <div className="text-center flex flex-col items-center shrink-0 pr-2">
               <div className="flex flex-col items-center">
                 <div className="w-26 h-26 bg-white border border-gray-200 rounded-lg mb-1 flex items-center justify-center p-1">
-                  <QRCodeCanvas 
-                    // Using the exact Render URL
+                  <QRCodeCanvas
                     value={`https://medicare-doctor-appointment-and-queue.onrender.com/appointment/${selectedHospital._id}`} 
                     size={90}
-                    level={"H"} // High error correction makes it easier to scan
+                    level={"H"}
                     includeMargin={true}
                   />
                 </div>
