@@ -1,8 +1,11 @@
 import { useState, useEffect, useMemo } from "react";
-import { FiUser, FiPlus, FiTrash2, FiShield, FiBriefcase, FiAlertCircle, FiSearch, FiChevronLeft, FiChevronRight, FiChevronsLeft, FiChevronsRight } from "react-icons/fi";
+import { 
+  FiUser, FiPlus, FiTrash2, FiShield, FiBriefcase, FiAlertCircle, FiSearch, 
+  FiChevronLeft, FiChevronRight, FiChevronsLeft, FiChevronsRight 
+} from "react-icons/fi";
 import api from "../services/api";
 
-export default function AdminsView({ hospitals = [] }) {
+export default function AdminsView({ hospitals = [], refreshActivities }) {
   const [admins, setAdmins] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -20,6 +23,24 @@ export default function AdminsView({ hospitals = [] }) {
     } catch (error) { console.error(error); }
   };
 
+  const toggleAdminStatus = async (a) => {
+    try {
+      const newStatus = a.status === 'active' ? 'inactive' : 'active';
+      await api.patch(`/super-admin/admin/${a._id}/status`, { status: newStatus });
+      await fetchAdmins();
+      if (refreshActivities) refreshActivities();
+    } catch (err) {
+      console.error("Failed to toggle status:", err);
+    }
+  };
+
+  const StatusToggle = ({ status, onToggle }) => (
+    <button onClick={onToggle} className={`relative flex items-center h-7 w-16 rounded-full transition-colors duration-300 ${status === 'active' ? 'bg-green-500' : 'bg-gray-300'}`}>
+      <div className={`absolute top-1 left-1 bg-white h-5 w-5 rounded-full shadow-md transition-transform duration-300 ${status === 'active' ? 'translate-x-9' : 'translate-x-0'}`} />
+      <span className={`text-[10px] font-black uppercase text-white ${status === 'active' ? 'ml-2' : 'ml-7'}`}>{status === 'active' ? 'On' : 'Off'}</span>
+    </button>
+  );
+
   const filteredAdmins = useMemo(() => {
     return admins.filter(a => 
       a.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -36,6 +57,7 @@ export default function AdminsView({ hospitals = [] }) {
       const response = await api.post("/super-admin/add-admin", newAdmin, { headers: { Authorization: `Bearer ${token}` } });
       if (response.data.success) {
         fetchAdmins();
+        if (refreshActivities) refreshActivities();
         setNewAdmin({ name: "", email: "", password: "", hospital_id: "" });
       }
     } catch (error) { console.error(error); }
@@ -96,7 +118,7 @@ export default function AdminsView({ hospitals = [] }) {
                 </div>
                 <div className="flex items-center gap-6">
                   <div className="text-[10px] font-bold text-gray-500 flex items-center gap-2"><FiBriefcase /> {hospitals.find(h => h._id === admin.hospital_id)?.hospital_name || "Unassigned"}</div>
-                  <span className="text-[10px] font-bold text-green-600 bg-green-50 px-3 py-1 rounded-full uppercase">{admin.status}</span>
+                  <StatusToggle status={admin.status} onToggle={() => toggleAdminStatus(admin)} />
                   <button className="text-gray-300 hover:text-red-500 transition"><FiTrash2 /></button>
                 </div>
               </div>

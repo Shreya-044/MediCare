@@ -25,8 +25,8 @@ const Navbar = ({ isLoggedIn, setIsLoggedIn, user }) => {
       "Doctors": "/admin/doctors",
       "Staff": "/admin/staff",
       "Patients": "/admin/patients",
-      "Appointments": "/appointments",
-      "Patient Files": "/patients"
+      "Appointments": "/doctor/appointments",
+      "Patient Files": "/doctor/patient-files"
     };
 
     return path === tabPathMap[tabName] || (tabName === "Dashboard" && path.includes("dashboard"));

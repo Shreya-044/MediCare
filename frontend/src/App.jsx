@@ -17,6 +17,8 @@ import { useLocation } from "react-router-dom";
 import PatientDashboard from "./pages/PatientDashboard";
 import PatientAppointment from "./pages/PatientAppointment";
 import PatientReport from "./pages/PatientReport";
+import DoctorAppointments from "./pages/DoctorAppointments";
+import DoctorPatientFiles from "./pages/DoctorPatientFiles";
 
 function AppContent() {
   const navigate = useNavigate();
@@ -168,6 +170,8 @@ function AppContent() {
             }
           />
           <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
+          <Route path="/doctor/appointments" element={<DoctorAppointments />} />
+          <Route path="/doctor/patient-files" element={<DoctorPatientFiles />} />
           <Route path="/staff/dashboard" element={<StaffDashboard />} />
           <Route
             path="/appointment/:hospitalId"

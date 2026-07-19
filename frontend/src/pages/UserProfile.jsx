@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { 
   FiUser, FiMail, FiPhone, FiEdit, FiSave, FiAlertCircle, 
-  FiActivity, FiShield, FiLayers, FiBriefcase 
+  FiActivity, FiShield, FiLayers, FiBriefcase, FiCalendar, FiClock 
 } from "react-icons/fi";
 
 export default function UserProfile({ userName, userEmail, userRole }) {
@@ -9,7 +9,20 @@ export default function UserProfile({ userName, userEmail, userRole }) {
   const [profile, setProfile] = useState({
     name: "", email: "", phone: "", role: "",
     systemId: "", department: "", allergies: "", history: "",
+    dob: "", gender: "",
   });
+
+  const age = useMemo(() => {
+    if (!profile.dob) return "N/A";
+    const birthDate = new Date(profile.dob);
+    const today = new Date();
+    let calculatedAge = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      calculatedAge--;
+    }
+    return calculatedAge;
+  }, [profile.dob]);
 
   useEffect(() => {
     setProfile((prev) => ({
@@ -20,7 +33,6 @@ export default function UserProfile({ userName, userEmail, userRole }) {
     }));
   }, [userName, userEmail, userRole]);
 
-  // Use useMemo to prevent unnecessary recalculations of the fields array
   const fields = useMemo(() => {
     const isAdministrative = userRole === "super_admin" || userRole === "admin";
     
@@ -28,6 +40,9 @@ export default function UserProfile({ userName, userEmail, userRole }) {
       { label: "Full Name", name: "name", icon: <FiUser size={18} />, readOnly: false },
       { label: "Email Address", name: "email", icon: <FiMail size={18} />, readOnly: false },
       { label: "Phone Number", name: "phone", icon: <FiPhone size={18} />, readOnly: false },
+      { label: "Date of Birth", name: "dob", icon: <FiCalendar size={18} />, readOnly: false, type: "date" },
+      { label: "Age", name: "age", icon: <FiClock size={18} />, readOnly: true },
+      { label: "Gender", name: "gender", icon: <FiUser size={18} />, readOnly: false, type: "select", options: ["Male", "Female", "Other"] },
     ];
 
     const adminFields = [
@@ -50,7 +65,6 @@ export default function UserProfile({ userName, userEmail, userRole }) {
 
   const handleSave = () => {
     setIsEditing(false);
-    // Add logic here to save to your database/API
     console.log("Saving profile:", profile);
   };
 
@@ -77,18 +91,33 @@ export default function UserProfile({ userName, userEmail, userRole }) {
               <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">{field.label}</p>
               
               {isEditing && !field.readOnly ? (
-                <input 
-                  name={field.name}
-                  value={profile[field.name] || ""}
-                  onChange={handleChange}
-                  className="w-full bg-transparent border-b-2 border-[#0b645b]/30 focus:border-[#0b645b] outline-none text-sm font-bold text-gray-900 py-1"
-                />
+                field.type === "select" ? (
+                  <select 
+                    name={field.name}
+                    value={profile[field.name] || ""}
+                    onChange={handleChange}
+                    className="w-full bg-transparent border-b-2 border-[#0b645b]/30 focus:border-[#0b645b] outline-none text-sm font-bold text-gray-900 py-1"
+                  >
+                    <option value="">Select Gender</option>
+                    {field.options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                  </select>
+                ) : (
+                  <input 
+                    name={field.name}
+                    type={field.type || "text"}
+                    value={profile[field.name] || ""}
+                    onChange={handleChange}
+                    className="w-full bg-transparent border-b-2 border-[#0b645b]/30 focus:border-[#0b645b] outline-none text-sm font-bold text-gray-900 py-1"
+                  />
+                )
               ) : (
                 <div className="text-sm font-bold text-gray-900 mt-1">
                   {field.name === "role" ? (
                     <span className="bg-[#0b645b]/10 text-[#0b645b] text-[10px] font-black px-2 py-0.5 rounded-full uppercase">
                       {profile[field.name]?.replace("_", " ") || "No Role"}
                     </span>
+                  ) : field.name === "age" ? (
+                    age
                   ) : (
                     profile[field.name] || <span className="text-gray-300 font-normal italic text-xs">Not provided</span>
                   )}

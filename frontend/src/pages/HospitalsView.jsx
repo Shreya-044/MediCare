@@ -6,7 +6,7 @@ import {
 } from 'react-icons/fi';
 import api from "../services/api";
 
-export default function HospitalsView({ hospitals = [], fetchHospitals }) {
+export default function HospitalsView({ hospitals = [], fetchHospitals, refreshActivities }) {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editValues, setEditValues] = useState({});
@@ -30,7 +30,16 @@ export default function HospitalsView({ hospitals = [], fetchHospitals }) {
     (currentPage - 1) * itemsPerPage, 
     currentPage * itemsPerPage
   );
-
+  const toggleHospitalStatus = async (h) => {
+    try {
+      const newStatus = h.status === 'active' ? 'inactive' : 'active';
+      await api.patch(`/super-admin/hospital/${h._id}/status`, { status: newStatus });
+      await fetchHospitals();
+      if (refreshActivities) refreshActivities();
+    } catch (err) {
+      console.error("Failed to toggle status:", err);
+    }
+  };
   const StatusToggle = ({ status, onToggle }) => (
     <button onClick={onToggle} className={`relative flex items-center h-7 w-16 rounded-full transition-colors duration-300 ${status === 'active' ? 'bg-green-500' : 'bg-gray-300'}`}>
       <div className={`absolute top-1 left-1 bg-white h-5 w-5 rounded-full shadow-md transition-transform duration-300 ${status === 'active' ? 'translate-x-9' : 'translate-x-0'}`} />
@@ -46,14 +55,23 @@ export default function HospitalsView({ hospitals = [], fetchHospitals }) {
       });
       if (response.data.success) {
         fetchHospitals();
+        if (refreshActivities) refreshActivities(); 
         setShowForm(false);
         setFormData({ hospital_name: '', email: '', phone: '', emergency_phone: '', address: '', city: '', state: '', pincode: '' });
       }
     } catch (err) { console.log(err); }
   };
-
   const startEdit = (h) => { setEditingId(h._id); setEditValues(h); };
-  const saveEdit = (_id) => { setEditingId(null); };
+  const saveEdit = async (id) => {
+    try {
+      await api.put(`/super-admin/hospital/${id}`, editValues);
+      setEditingId(null);
+      await fetchHospitals();
+      if (refreshActivities) refreshActivities();
+    } catch (err) {
+      console.error("Failed to save edits:", err);
+    }
+  };
 
   const EditField = ({ label, field }) => (
     <div className="mb-2">
@@ -61,6 +79,28 @@ export default function HospitalsView({ hospitals = [], fetchHospitals }) {
       <input className="w-full border border-gray-200 p-1.5 rounded-lg text-xs outline-none focus:ring-1 focus:ring-[#0b645b]" value={editValues[field] || ''} onChange={e => setEditValues({ ...editValues, [field]: e.target.value })} />
     </div>
   );
+  const handleAddHospital = async (hospitalData) => {
+    try {
+      await api.post("/hospital/add", hospitalData);
+      await fetchHospitals();
+      if (refreshActivities) {
+        refreshActivities(); 
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+  const deleteHospital = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this hospital?")) return;
+    try {
+      await api.delete(`/super-admin/hospital/${id}`);
+      await fetchHospitals();
+      if (refreshActivities) refreshActivities(); // Add this
+    } catch (err) {
+      console.error("Failed to delete hospital:", err);
+    }
+  };
+  
 
   return (
     <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
