@@ -125,7 +125,7 @@ export default function Home() {
               <div className="flex flex-col items-center">
                 <div className="w-26 h-26 bg-white border border-gray-200 rounded-lg mb-1 flex items-center justify-center p-1">
                   <QRCodeCanvas
-                    value={`https://medicare-doctor-appointment-and-queue.onrender.com/appointment/${selectedHospital._id}`} 
+                    value={`${window.location.origin}/appointment/${selectedHospital._id}`} 
                     size={90}
                     level={"H"}
                     includeMargin={true}
