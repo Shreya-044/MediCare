@@ -3,7 +3,7 @@ import { searchHospitals } from "../services/hospitalService";
 import { Link } from "react-router-dom";
 import QRCode from "qrcode";
 
-export default function Home() {
+export default function PatientDashboard() {
   const [search, setSearch] = useState("");
   const [hospitals, setHospitals] = useState([]);
   const [loading, setLoading] = useState(false);

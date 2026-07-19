@@ -47,7 +47,7 @@ export default function Login(props) {
         </div>
       )}
 
-      {/* Main container with both the card and the switcher */}
+      {/* Main container */}
       <div className="relative z-10 w-full max-w-sm flex flex-col gap-6">
         <div className="rounded-3xl bg-white p-8 shadow-2xl relative">
           <button onClick={() => navigate("/")} className="absolute right-6 top-6 text-gray-300 hover:text-gray-600">
@@ -107,7 +107,7 @@ export default function Login(props) {
           </div>
         </div>
 
-        {/* CMS Switcher Line restored */}
+        {/* CMS Switcher */}
         <div className="text-center">
           <div className="inline-block rounded-full bg-slate-800/80 px-6 py-3 text-[11px] text-white backdrop-blur-sm">
             Are you a Hospital Staff or Doctor? <Link to="/cms-login" className="font-bold text-[#2dd4bf] hover:underline">Log in to CMS</Link>
