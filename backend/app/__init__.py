@@ -6,6 +6,7 @@ from app.routes.super_admin import super_admin_bp
 from app.routes.admin import admin_bp
 from app.routes.patient import patient_bp
 from app.routes.appointment import appointment_bp
+from app.routes.doctor import doctor_bp
 
 def create_app():
 
@@ -45,6 +46,11 @@ def create_app():
     # Appointment Routes
     app.register_blueprint(
         appointment_bp,
+        url_prefix="/api"
+    )
+
+    app.register_blueprint(
+        doctor_bp,
         url_prefix="/api"
     )
 

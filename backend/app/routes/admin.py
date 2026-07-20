@@ -17,7 +17,7 @@ from app.services.doctor_service import (
     get_all_doctors,
     get_doctor_by_id,
     update_doctor,
-    deactivate_doctor
+    deactivate_doctor,
 )
 
 admin_bp = Blueprint("admin", __name__)
@@ -77,8 +77,24 @@ def doctor(doctor_id):
 
 @admin_bp.route("/update-doctor/<doctor_id>", methods=["PUT"])
 @jwt_required
-@role_required("admin")
 def update_doctor_route(doctor_id):
+
+    current_role = g.current_user["role"]
+
+    if current_role not in ["admin", "doctor"]:
+        return jsonify({
+            "success": False,
+            "message": "Access denied."
+        }), 403
+
+    # Doctor can update only himself
+    if current_role == "doctor":
+        if g.current_user["_id"] != doctor_id:
+            return jsonify({
+                "success": False,
+                "message": "You can update only your own profile."
+            }), 403
+
 
     data = request.get_json()
 
@@ -87,6 +103,7 @@ def update_doctor_route(doctor_id):
             "success": False,
             "message": "Request body is required."
         }), 400
+
 
     hospital_id = g.current_user["hospital_id"]
 
@@ -169,8 +186,26 @@ def get_staff(staff_id):
 
 @admin_bp.route("/update-staff/<staff_id>", methods=["PUT"])
 @jwt_required
-@role_required("admin")
 def update_staff_route(staff_id):
+
+    current_role = g.current_user["role"]
+
+    if current_role not in ["admin", "staff"]:
+        return jsonify({
+            "success": False,
+            "message": "Access denied."
+        }), 403
+
+
+    # Staff can update only themselves
+    if current_role == "staff":
+
+        if g.current_user["_id"] != staff_id:
+            return jsonify({
+                "success": False,
+                "message": "You can update only your own profile."
+            }), 403
+
 
     data = request.get_json()
 
@@ -180,26 +215,13 @@ def update_staff_route(staff_id):
             "message": "Request body is required."
         }), 400
 
+
     hospital_id = g.current_user["hospital_id"]
 
     response, status = update_staff(
         staff_id,
         hospital_id,
         data
-    )
-
-    return jsonify(response), status
-
-@admin_bp.route("/deactivate-staff/<staff_id>", methods=["PUT"])
-@jwt_required
-@role_required("admin")
-def deactivate_staff_route(staff_id):
-
-    hospital_id = g.current_user["hospital_id"]
-
-    response, status = deactivate_staff(
-        staff_id,
-        hospital_id
     )
 
     return jsonify(response), status

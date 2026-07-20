@@ -34,11 +34,11 @@ export default function DoctorAppointments() {
           <h2 className="text-2xl font-black text-gray-900">My Appointments</h2>
           <p className="text-sm text-gray-500 font-medium">Manage your patient schedule.</p>
         </div>
-        
+
         <div className="bg-white p-2 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3">
           <FiCalendar className="text-[#0b645b] ml-2" />
-          <input 
-            type="date" 
+          <input
+            type="date"
             min={today}
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
@@ -65,19 +65,28 @@ export default function DoctorAppointments() {
                 <div>
                   <p className="text-lg font-black text-gray-900">{appt.patient_name}</p>
                   <p className="text-xs text-gray-400 font-bold uppercase tracking-widest">{appt.patient_email}</p>
+                  <p className="text-sm text-gray-500">
+                    {appt.patient_phone}
+                  </p>
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-8">
                 <div className="flex items-center gap-2 font-bold text-gray-600">
                   <FiClock className="text-[#0b645b]" />
                   {appt.appointment_time}
                 </div>
-                <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase ${
-                  appt.status === 'confirmed' ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'
-                }`}>
-                  {appt.status}
-                </span>
+                <p className="text-xs text-gray-400">
+                  {appt.appointment_date}
+                </p>
+                <span
+                  className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase ${appt.status === "Booked"
+                    ? "bg-green-100 text-green-600"
+                    : appt.status === "Completed"
+                      ? "bg-blue-100 text-blue-600"
+                      : "bg-red-100 text-red-600"
+                    }`}
+                ></span>
               </div>
             </div>
           ))
