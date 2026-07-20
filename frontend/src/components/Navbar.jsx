@@ -42,6 +42,9 @@ const Navbar = ({ isLoggedIn, setIsLoggedIn, user }) => {
     }
   }, [user]);
   const role = loggedInUser?.role;
+  console.log("Navbar user:", loggedInUser);
+  console.log("LocalStorage user:", localStorage.getItem("user"));
+  console.log("isLoggedIn:", isLoggedIn);
   const userName = loggedInUser?.name || "User";
   let tabs = [];
 
