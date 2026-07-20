@@ -33,19 +33,13 @@ const Navbar = ({ isLoggedIn, setIsLoggedIn, user }) => {
     return path === tabPathMap[tabName] || (tabName === "Dashboard" && path.includes("dashboard"));
   };
   const [dropdown, setDropdown] = useState(false);
-  const [loggedInUser, setLoggedInUser] = useState(
-    user || JSON.parse(localStorage.getItem("user") || "null")
-  );
-  useEffect(() => {
-    if (user) {
-      setLoggedInUser(user);
-    }
-  }, [user]);
+  const loggedInUser =
+  user || JSON.parse(localStorage.getItem("user") || "null");
   const role = loggedInUser?.role;
   console.log("Navbar user:", loggedInUser);
   console.log("LocalStorage user:", localStorage.getItem("user"));
   console.log("isLoggedIn:", isLoggedIn);
-  const userName = loggedInUser?.name || "User";
+  const userName = loggedInUser?.name ?? "User";
   let tabs = [];
 
   if (role === "super_admin") {

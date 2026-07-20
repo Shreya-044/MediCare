@@ -24,9 +24,10 @@ function AppContent() {
   const navigate = useNavigate();
   const [hospitals, setHospitals] = useState([]);
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("token"));
-  const [user, setUser] = useState(
-    () => JSON.parse(localStorage.getItem("user")) || { role: "" },
-  );
+  const [user, setUser] = useState(() => {
+    const stored = localStorage.getItem("user");
+    return stored ? JSON.parse(stored) : null;
+  });
   const [activeTab, setActiveTab] = useState("Dashboard");
   const location = useLocation();
 
