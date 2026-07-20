@@ -188,6 +188,21 @@ def register_and_book(data):
 
     return book_appointment(appointment_data)
 
+def book_logged_in_patient(patient_id, data):
+
+    appointment_data = {
+        "patient_id": patient_id,
+        "doctor_id": data["doctor_id"],
+        "appointment_date": data["appointment_date"],
+        "appointment_time": data["appointment_time"],
+        "consultation_fee": data["consultation_fee"],
+        "platform_fee": data["platform_fee"],
+        "gst": data["gst"],
+        "total_amount": data["total_amount"]
+    }
+
+    return book_appointment(appointment_data)
+
 def get_hospital_doctors(hospital_id):
 
     doctors = db["users"].find({

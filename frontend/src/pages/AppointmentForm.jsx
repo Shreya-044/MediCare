@@ -67,6 +67,25 @@ export default function AppointmentForm() {
     const passwordRegex =
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
+    const requestBody = {
+      name: patientData.name,
+      email: patientData.email,
+      phone: patientData.phone,
+      dob: patientData.dob,
+      gender: patientData.gender,
+      doctor_id: selectedDoctor._id,
+      appointment_date: selectedDate,
+      appointment_time: selectedTime,
+      consultation_fee: selectedDoctor.consultation_fee,
+      platform_fee: PLATFORM_FEE,
+      gst: (selectedDoctor.consultation_fee + PLATFORM_FEE) * GST_RATE,
+      total_amount: Number(calculateTotal(selectedDoctor.consultation_fee)),
+    };
+
+    if (!isLoggedIn) {
+      requestBody.password = patientData.password;
+    }
+
     if (
       !patientData.name ||
       !patientData.phone ||
@@ -92,24 +111,24 @@ export default function AppointmentForm() {
     }
 
     try {
-      const response = await api.post("/patient/book-appointment", {
-        name: patientData.name,
-        email: patientData.email,
-        phone: patientData.phone,
-        password: patientData.password,
-        dob: patientData.dob,
-        gender: patientData.gender,
-        doctor_id: selectedDoctor._id,
-        appointment_date: selectedDate,
-        appointment_time: selectedTime,
-        consultation_fee: selectedDoctor.consultation_fee,
-        platform_fee: PLATFORM_FEE,
-        gst: (selectedDoctor.consultation_fee + PLATFORM_FEE) * GST_RATE,
-        total_amount: Number(calculateTotal(selectedDoctor.consultation_fee)),
-      });
+      const token = localStorage.getItem("token");
+
+      const response = await api.post(
+        "/patient/book-appointment",
+        requestBody,
+        {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : "",
+          },
+        }
+      );
       triggerPopup(response.data.message);
       setTimeout(() => {
-        navigate("/login");
+        if (isLoggedIn) {
+          navigate("/appointments");
+        } else {
+          navigate("/login");
+        }
       }, 2000);
     } catch (err) {
       triggerPopup(
@@ -155,6 +174,24 @@ export default function AppointmentForm() {
       console.log(err);
     }
   };
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const user = JSON.parse(localStorage.getItem("user"));
+
+    if (token && user) {
+      setIsLoggedIn(true);
+
+      setPatientData({
+        name: user.name || "",
+        phone: user.phone || "",
+        email: user.email || "",
+        password: "",
+        dob: user.dob || "",
+        gender: user.gender || "",
+      });
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-8 -mt-5">
@@ -223,42 +260,44 @@ export default function AppointmentForm() {
               type: "select",
               options: ["Male", "Female", "Other"],
             },
-          ].map((f) => (
-            <div
-              key={f.key}
-              className="flex items-center bg-slate-50 border rounded-2xl px-4 py-3"
-            >
-              <f.icon className="text-slate-400 mr-3" />
-              {f.type === "select" ? (
-                <select
-                  disabled={isLoggedIn}
-                  value={patientData[f.key]}
-                  onChange={(e) =>
-                    setPatientData({ ...patientData, [f.key]: e.target.value })
-                  }
-                  className="w-full bg-transparent outline-none text-sm"
-                >
-                  <option value="">Select Gender</option>
-                  {f.options.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <input
-                  disabled={isLoggedIn && f.key !== "password"}
-                  value={patientData[f.key]}
-                  onChange={(e) =>
-                    setPatientData({ ...patientData, [f.key]: e.target.value })
-                  }
-                  type={f.type}
-                  placeholder={f.placeholder}
-                  className="w-full bg-transparent outline-none text-sm"
-                />
-              )}
-            </div>
-          ))}
+          ]
+            .filter((f) => !(isLoggedIn && f.key === "password"))
+            .map((f) => (
+              <div
+                key={f.key}
+                className="flex items-center bg-slate-50 border rounded-2xl px-4 py-3"
+              >
+                <f.icon className="text-slate-400 mr-3" />
+                {f.type === "select" ? (
+                  <select
+                    disabled={isLoggedIn}
+                    value={patientData[f.key]}
+                    onChange={(e) =>
+                      setPatientData({ ...patientData, [f.key]: e.target.value })
+                    }
+                    className="w-full bg-transparent outline-none text-sm"
+                  >
+                    <option value="">Select Gender</option>
+                    {f.options.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    disabled={isLoggedIn && f.key !== "password"}
+                    value={patientData[f.key]}
+                    onChange={(e) =>
+                      setPatientData({ ...patientData, [f.key]: e.target.value })
+                    }
+                    type={f.type}
+                    placeholder={f.placeholder}
+                    className="w-full bg-transparent outline-none text-sm"
+                  />
+                )}
+              </div>
+            ))}
         </div>
 
         {/* Specialties and rest of the component remains unchanged... */}

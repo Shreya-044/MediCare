@@ -2,12 +2,14 @@ from flask import Blueprint
 from flask import request, jsonify
 from app.services.patient_service import search_hospitals
 from app.services.patient_service import get_patient_appointments
+from app.utils.auth import patient_required
 from app.services.patient_service import (
     register_patient,
     login_patient,
     register_and_book,
+    book_logged_in_patient,
     get_hospital_doctors,
-    get_patient
+    get_patient,
 )
 
 patient_bp = Blueprint("patient", __name__)
@@ -88,39 +90,48 @@ def book_appointment():
 
     data = request.get_json()
 
-    if not data:
-        return jsonify({
-            "success": False,
-            "message": "Request body is required."
-        }), 400
+    auth_header = request.headers.get("Authorization")
 
-    required_fields = [
-        "name",
-        "email",
-        "phone",
-        "password",
-        "dob",
-        "gender",
-        "doctor_id",
-        "appointment_date",
-        "appointment_time",
-        "consultation_fee",
-        "platform_fee",
-        "gst",
-        "total_amount"
-    ]
+    # -----------------------------
+    # Logged-in patient
+    # -----------------------------
+    if auth_header:
 
-    for field in required_fields:
-        if field not in data or data[field] in [None, ""]:
-            return jsonify({
-                "success": False,
-                "message": f"{field} is required."
-            }), 400
+        from app.utils.jwt import verify_token
 
-    response, status = register_and_book(data)
+        token = auth_header.split(" ")[1]
 
-    return jsonify(response), status
+        payload = verify_token(token)
 
+        if payload and payload.get("patient_id"):
+
+            required_fields = [
+                "doctor_id",
+                "appointment_date",
+                "appointment_time",
+                "consultation_fee",
+                "platform_fee",
+                "gst",
+                "total_amount"
+            ]
+
+            for field in required_fields:
+                if field not in data or data[field] in [None, ""]:
+                    return jsonify({
+                        "success": False,
+                        "message": f"{field} is required."
+                    }), 400
+
+            response, status = book_logged_in_patient(
+                payload["patient_id"],
+                data
+            )
+
+            return jsonify(response), status
+
+    # -----------------------------
+    # Guest patient
+    # -----------------------------
 @patient_bp.route("/hospital/<hospital_id>/doctors", methods=["GET"])
 def hospital_doctors(hospital_id):
 
