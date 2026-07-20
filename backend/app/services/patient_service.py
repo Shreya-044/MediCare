@@ -33,19 +33,13 @@ def search_hospitals(query):
     for hospital in result:
 
         hospital_list.append({
-
             "_id": str(hospital["_id"]),
-
             "hospital_name": hospital["hospital_name"],
-
             "city": hospital["city"],
-
             "state": hospital["state"],
-
             "address": hospital["address"],
-
             "phone": hospital["phone"],
-
+            "emergency_phone": hospital.get("emergency_phone", "Not Available"),
             "email": hospital["email"]
 
         })
