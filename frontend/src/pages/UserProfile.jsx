@@ -27,101 +27,57 @@ export default function UserProfile() {
     }
     return calculatedAge;
   }, [profile.dob]);
-
-  const fetchProfile = async () => {
-
-    if (!currentUser) return;
-
-    try {
-
-      let response;
-
-      switch (role) {
-
-        case "patient":
-          response = await api.get(`/patient/${currentUser._id}`);
-          break;
-
-        case "doctor":
-          response = await api.get(`/doctor/${currentUser._id}`);
-          break;
-
-        case "staff":
-          response = await api.get(`/staff/${currentUser._id}`);
-          break;
-
-        case "admin":
-          response = await api.get(`/admin/${currentUser._id}`);
-          break;
-
-        case "super_admin":
-          response = await api.get(`/super-admin/${currentUser._id}`);
-          break;
-
-        default:
-          return;
-      }
-
-      setProfile(response.data.data);
-
-      localStorage.setItem(
-        "user",
-        JSON.stringify(response.data.data)
-      );
-
-    } catch (error) {
-      console.log(error);
-    }
-
-  };
+  
   useEffect(() => {
 
-    const fetchProfile = async () => {
+    const loadProfile = async () => {
 
         const currentUser = JSON.parse(localStorage.getItem("user"));
 
         if (!currentUser) return;
 
+
         try {
 
-            let response;
+            let profileData = {
+                ...currentUser,
+                _id: currentUser._id || currentUser.id
+            };
 
+
+            // Patient requires API fetch
             if (currentUser.role === "patient") {
 
-                response = await api.get(
-                    `/patient/${currentUser._id}`
+                const response = await api.get(
+                    `/patient/${profileData._id}`
                 );
 
-                setProfile(response.data.data);
-
-            } else {
-
-                response = await api.get("/auth/profile", {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem("token")}`,
-                    },
-                });
-
-                setProfile(response.data.user);
+                profileData = response.data.data;
 
             }
 
+
+            setProfile(profileData);
+
+
         } catch (err) {
+
             console.log(err);
+
         }
 
     };
 
-    fetchProfile();
+
+    loadProfile();
 
 }, []);
-
   const fields = useMemo(() => {
     const isAdministrative =
-    role === "super_admin" ||
-    role === "admin" ||
-    role === "doctor" ||
-    role === "staff";
+      role === "super_admin" ||
+      role === "admin" ||
+      role === "doctor" ||
+      role === "staff";
 
     const baseFields = [
       { label: "Full Name", name: "name", icon: <FiUser size={18} />, readOnly: false },
@@ -150,10 +106,133 @@ export default function UserProfile() {
     setProfile(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleSave = () => {
-    setIsEditing(false);
-    console.log("Saving profile:", profile);
-  };
+  const handleSave = async () => {
+
+    try {
+
+        let response;
+
+
+        const id = profile._id || profile.id;
+
+
+        switch (role) {
+
+
+            case "patient":
+
+                response = await api.put(
+                    `/patient/${id}`,
+                    profile
+                );
+
+                break;
+
+
+
+            case "doctor":
+
+                response = await api.put(
+                    `/admin/update-doctor/${id}`,
+                    profile
+                );
+
+                break;
+
+
+
+            case "staff":
+
+                response = await api.put(
+                    `/admin/update-staff/${id}`,
+                    profile
+                );
+
+                break;
+
+
+
+            case "admin":
+
+                response = await api.put(
+                    `/super-admin/update-admin/${id}`,
+                    profile
+                );
+
+                break;
+
+
+
+            case "super_admin":
+
+                response = await api.put(
+                    `/super-admin/update-profile/${id}`,
+                    profile
+                );
+
+                break;
+
+
+
+            default:
+
+                return;
+
+        }
+
+
+
+        if (response.data.success) {
+
+
+            alert("Profile Updated Successfully");
+
+
+            setIsEditing(false);
+
+
+
+            const updatedUser = {
+
+                ...profile,
+
+                ...response.data.data,
+
+                _id: id
+
+            };
+
+
+
+            localStorage.setItem(
+                "user",
+                JSON.stringify(updatedUser)
+            );
+
+
+
+            setProfile(updatedUser);
+
+
+        }
+
+
+
+    } catch(err) {
+
+
+        console.log(err);
+
+
+        alert(
+            err.response?.data?.message ||
+            "Update Failed"
+        );
+
+
+    }
+
+};
 
   return (
     <div className="max-w-3xl mx-auto px-10 py-10 animate-in fade-in duration-300">

@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, g
 
 from app.middleware.jwt_required import jwt_required
 from app.middleware.role_required import role_required
@@ -140,8 +140,27 @@ def get_admin(admin_id):
 
 @super_admin_bp.route("/update-admin/<admin_id>", methods=["PUT"])
 @jwt_required
-@role_required("super_admin")
 def update_admin_route(admin_id):
+
+    current_role = g.current_user["role"]
+
+    # Only super_admin and admin allowed
+    if current_role not in ["super_admin", "admin"]:
+        return jsonify({
+            "success": False,
+            "message": "Access denied."
+        }), 403
+
+
+    # Admin can update only their own profile
+    if current_role == "admin":
+
+        if g.current_user["_id"] != admin_id:
+            return jsonify({
+                "success": False,
+                "message": "You can update only your own profile."
+            }), 403
+
 
     data = request.get_json()
 
@@ -151,7 +170,11 @@ def update_admin_route(admin_id):
             "message": "Request body is required."
         }), 400
 
-    response, status = update_admin(admin_id, data)
+
+    response, status = update_admin(
+        admin_id,
+        data
+    )
 
     return jsonify(response), status
 
@@ -170,5 +193,26 @@ def delete_admin_route(admin_id):
 def dashboard_stats():
 
     response, status = get_dashboard_stats()
+
+    return jsonify(response), status
+
+@super_admin_bp.route("/update-profile/<admin_id>", methods=["PUT"])
+@jwt_required
+@role_required("super_admin")
+def update_super_admin_profile(admin_id):
+
+    data = request.get_json()
+
+    if not data:
+        return jsonify({
+            "success": False,
+            "message": "Request body is required."
+        }),400
+
+
+    response, status = update_admin(
+        admin_id,
+        data
+    )
 
     return jsonify(response), status
