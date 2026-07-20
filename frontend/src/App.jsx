@@ -19,6 +19,7 @@ import PatientAppointment from "./pages/PatientAppointment";
 import PatientReport from "./pages/PatientReport";
 import DoctorAppointments from "./pages/DoctorAppointments";
 import DoctorPatientFiles from "./pages/DoctorPatientFiles";
+import LiveQueue from "./pages/LiveQueue";
 
 function AppContent() {
   const navigate = useNavigate();
@@ -192,6 +193,7 @@ function AppContent() {
               />
             }
           />
+          <Route path="//appointment/:id/live" element={<LiveQueue />} />
           <Route path="/appointments" element={<PatientAppointment />} />
           <Route path="/reports" element={<PatientReport />} />
 

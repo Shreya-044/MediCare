@@ -67,10 +67,10 @@ export default function Home() {
 
   return (
     <div className="bg-slate-50 min-h-screen pb-20 -mt-6">
-      <div className="max-w-7xl mx-auto px-10">
+      <div className="max-w-7xl mx-auto px-4 md:px-10">
         {/* Search Bar */}
-        <div className="py-12 relative" ref={searchRef}>
-          <div className="max-w-3xl mx-auto bg-white rounded-full p-4 shadow-sm border border-gray-200 flex items-center relative z-20">
+        <div className="py-8 md:py-12 relative" ref={searchRef}>
+          <div className="max-w-3xl mx-auto bg-white rounded-full p-2 md:p-4 shadow-sm border border-gray-200 flex items-center relative z-20">
             <span className="pl-4 text-xl">🔍</span>
             <input
               type="text"
@@ -121,25 +121,25 @@ export default function Home() {
 
         {/* Selected Hospital Detailed Card */}
         {selectedHospital && (
-          <div className="max-w-5xl mx-auto bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex items-center gap-6 mb-16">
+          <div className="max-w-5xl mx-auto bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-col md:flex-row items-center gap-6 mb-16">
             <img
               src="/hospital-placeholder.jpg"
               alt="Hospital"
-              className="w-60 h-32 rounded-xl object-cover shrink-0"
+              className="w-full md:w-60 h-40 md:h-32 rounded-xl object-cover shrink-0"
             />
 
             {/* Main Information */}
-            <div className="flex-1 flex flex-col justify-center">
+            <div className="flex-1 flex flex-col justify-center text-center md:text-left">
               <h2 className="text-2xl font-bold text-gray-900">
                 {selectedHospital.hospital_name}
               </h2>
-              <p className="text-gray-500 flex items-center gap-1 mt-1 text-sm font-medium">
+              <p className="text-gray-500 flex items-center justify-center md:justify-start gap-1 mt-1 text-sm font-medium">
                 <span className="text-rose-400 text-xs">📍</span>{" "}
                 {selectedHospital.address}, {selectedHospital.city}
               </p>
 
               {/* Contact Details */}
-              <div className="flex items-center gap-4 mt-2 text-xs font-bold text-[#0b645b]">
+              <div className="flex flex-col md:flex-row items-center justify-center md:justify-start gap-2 md:gap-4 mt-2 text-xs font-bold text-[#0b645b]">
                 <p className="flex items-center gap-1">
                   <span className="text-teal-600">📞</span>{" "}
                   {selectedHospital.phone}
@@ -152,7 +152,7 @@ export default function Home() {
             </div>
 
             {/* QR Section */}
-            <div className="text-center flex flex-col items-center shrink-0 pr-2">
+            <div className="text-center flex flex-col items-center shrink-0 pr-2 pb-4 md:pb-0">
               <div className="flex flex-col items-center">
                 <div className="w-26 h-26 bg-white border border-gray-200 rounded-lg mb-1 flex items-center justify-center p-1">
                   <QRCodeCanvas
@@ -178,9 +178,9 @@ export default function Home() {
         )}
 
         {/* Hero Section */}
-        <section className="bg-[#0b645b] rounded-3xl p-10 flex flex-col md:flex-row items-center justify-between text-white shadow-xl mb-16">
-          <div className="max-w-xl">
-            <h2 className="text-3xl font-black mb-3">
+        <section className="bg-[#0b645b] rounded-3xl p-6 md:p-10 flex flex-col md:flex-row items-center justify-between text-white shadow-xl mb-16 gap-6">
+          <div className="max-w-xl text-center md:text-left">
+            <h2 className="text-2xl md:text-3xl font-black mb-3">
               MediCare provides the best
               <br />
               healthcare solutions
@@ -189,9 +189,9 @@ export default function Home() {
               Everything you need to know in minutes
             </p>
           </div>
-          <div className="bg-white/10 px-8 py-6 rounded-2xl flex items-center gap-4">
+          <div className="bg-white/10 px-6 py-4 md:px-8 md:py-6 rounded-2xl flex items-center gap-4">
             <div className="text-3xl">🩺</div>
-            <p className="font-bold text-sm leading-tight">
+            <p className="font-bold text-sm leading-tight text-left">
               Revolutionizing Healthcare
               <br />
               Delivery
@@ -204,7 +204,7 @@ export default function Home() {
           <h2 className="text-center text-2xl font-black text-gray-900 mb-10">
             WHY CHOOSE MEDICARE?
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {[
               {
                 title: "Convenient Access",
@@ -239,7 +239,7 @@ export default function Home() {
             ].map((item) => (
               <div
                 key={item.title}
-                className={`${item.color} p-8 rounded-4xl text-center flex flex-col items-center`}
+                className={`${item.color} p-6 md:p-8 rounded-4xl text-center flex flex-col items-center`}
               >
                 <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center text-3xl mb-6 shadow-sm">
                   {item.icon}
