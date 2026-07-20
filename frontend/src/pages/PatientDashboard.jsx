@@ -181,9 +181,9 @@ export default function PatientDashboard() {
         <section className="bg-[#0b645b] rounded-3xl p-6 md:p-10 flex flex-col md:flex-row items-center justify-between text-white shadow-xl mb-16 gap-6">
           <div className="max-w-xl text-center md:text-left">
             <h2 className="text-2xl md:text-3xl font-black mb-3">
-              MediCare provides the best
+              MediCare provides the best 
               <br className="hidden md:block" />
-              healthcare solutions
+              &nbsp;healthcare solutions
             </h2>
             <p className="text-sm opacity-90">
               Everything you need to know in minutes

@@ -183,7 +183,7 @@ export default function Home() {
             <h2 className="text-2xl md:text-3xl font-black mb-3">
               MediCare provides the best
               <br />
-              healthcare solutions
+              &nbsp;healthcare solutions
             </h2>
             <p className="text-sm opacity-90">
               Everything you need to know in minutes
