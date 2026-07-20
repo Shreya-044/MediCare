@@ -31,6 +31,7 @@ def create_doctor(data, hospital_id):
         "rating": 5,
         "available_slots": data["available_slots"],
         "status": "active",
+        "availability":"offline",
         "created_at": datetime.now(timezone.utc)
     }
 
@@ -236,3 +237,417 @@ def deactivate_doctor(doctor_id, hospital_id):
             "success": False,
             "message": "Invalid Doctor ID."
         }, 400
+
+def get_doctor_queue(doctor_id):
+
+    appointments = db["appointments"]
+    patients = db["patients"]
+
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    result = appointments.find({
+        "doctor_id": ObjectId(doctor_id),
+        "appointment_date": today,
+        "appointment_status": "Booked"
+    }).sort("appointment_time", 1)
+
+    queue = []
+
+    position = 1
+
+    for appointment in result:
+
+        patient = patients.find_one({
+            "_id": appointment["patient_id"]
+        })
+
+        if not patient:
+            continue
+
+        queue.append({
+            "_id": str(appointment["_id"]),
+            "patient_name": patient["name"],
+            "patient_email": patient["email"],
+            "patient_phone": patient["phone"],
+            "appointment_time": appointment["appointment_time"],
+            "appointment_status": appointment["appointment_status"],
+            "position": position
+        })
+
+        position += 1
+
+    return {
+        "success": True,
+        "data": queue
+    }, 200
+
+attendance = db["attendance"]
+users = db["users"]
+doctor_leaves = db["doctor_leaves"]
+
+def punch_in(doctor_id):
+
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    # Check if already punched in today
+    existing = attendance.find_one({
+        "doctor_id": ObjectId(doctor_id),
+        "date": today
+    })
+
+    if existing:
+        return {
+            "success": False,
+            "message": "Already punched in today."
+        }, 400
+
+    doctor = users.find_one({
+        "_id": ObjectId(doctor_id),
+        "role": "doctor"
+    })
+
+    if not doctor:
+        return {
+            "success": False,
+            "message": "Doctor not found."
+        }, 404
+
+    attendance.insert_one({
+
+        "doctor_id": ObjectId(doctor_id),
+
+        "hospital_id": doctor["hospital_id"],
+
+        "date": today,
+
+        "punch_in": datetime.now(timezone.utc),
+
+        "punch_out": None,
+
+        "working_hours": 0,
+
+        "attendance_status": "Present",
+
+        "created_at": datetime.now(timezone.utc)
+
+    })
+
+    users.update_one(
+        {
+            "_id": ObjectId(doctor_id)
+        },
+        {
+            "$set": {
+                "availability": "online"
+            }
+        }
+    )
+
+    return {
+        "success": True,
+        "message": "Punch In Successful"
+    }, 200
+
+def punch_out(doctor_id):
+
+    today = datetime.now().strftime("%Y-%m-%d")
+
+    record = attendance.find_one({
+        "doctor_id": ObjectId(doctor_id),
+        "date": today
+    })
+
+    if not record:
+        return {
+            "success": False,
+            "message": "Please Punch In First."
+        }, 400
+
+    if record["punch_out"] is not None:
+        return {
+            "success": False,
+            "message": "Already Punched Out."
+        }, 400
+
+    now = datetime.now(timezone.utc)
+    punch_in = record["punch_in"]
+    if punch_in.tzinfo is None:
+        punch_in = punch_in.replace(tzinfo=timezone.utc)
+        hours = (
+            now - punch_in
+            ).total_seconds() / 3600
+        attendance.update_one(
+            {
+                "_id": record["_id"]
+            },
+        {
+            "$set": {
+                "punch_out": now,
+                "working_hours": round(hours, 2)
+            }
+        }
+    )
+
+    users.update_one(
+        {
+            "_id": ObjectId(doctor_id)
+        },
+        {
+            "$set": {
+                "availability": "offline"
+            }
+        }
+    )
+
+    return {
+        "success": True,
+        "message": "Punch Out Successful"
+    }, 200
+
+def get_attendance_history(doctor_id):
+
+    result = attendance.find({
+        "doctor_id": ObjectId(doctor_id)
+    }).sort("date", -1)
+
+    data = []
+
+    for item in result:
+
+        data.append({
+            "date": item["date"],
+            "punch_in": item["punch_in"],
+            "punch_out": item["punch_out"],
+            "working_hours": item["working_hours"],
+            "attendance_status": item["attendance_status"]
+        })
+
+    return {
+        "success": True,
+        "data": data
+    }, 200
+
+def apply_leave(doctor_id, data):
+
+    doctor = users.find_one({
+        "_id": ObjectId(doctor_id),
+        "role": "doctor"
+    })
+
+    if not doctor:
+        return {
+            "success": False,
+            "message": "Doctor not found."
+        }, 404
+
+    # Check if leave already exists for this date
+    existing = doctor_leaves.find_one({
+        "doctor_id": ObjectId(doctor_id),
+        "leave_date": data["date"]
+    })
+
+    if existing:
+        return {
+            "success": False,
+            "message": "Leave already requested for this date."
+        }, 400
+
+    doctor_leaves.insert_one({
+
+        "doctor_id": ObjectId(doctor_id),
+
+        "hospital_id": doctor["hospital_id"],
+
+        "leave_date": data["date"],
+
+        "reason": data["reason"],
+
+        "leave_type": data["type"],
+
+        "status": "Pending",
+
+        "created_at": datetime.now(timezone.utc)
+
+    })
+
+    return {
+        "success": True,
+        "message": "Leave Request Submitted"
+    }, 200
+
+def get_leave_history(doctor_id):
+
+    leaves = doctor_leaves.find({
+
+        "doctor_id": ObjectId(doctor_id)
+
+    }).sort("created_at",-1)
+
+    data=[]
+
+    for leave in leaves:
+
+        data.append({
+
+            "id":str(leave["_id"]),
+
+            "date":leave["leave_date"],
+
+            "reason":leave["reason"],
+
+            "type":leave["leave_type"],
+
+            "status":leave["status"]
+
+        })
+
+    return {
+
+        "success":True,
+
+        "data":data
+
+    },200
+
+def get_salary_summary(doctor_id):
+
+    attendance = db["attendance"]
+    appointments = db["appointments"]
+    doctor_leaves = db["doctor_leaves"]
+    users = db["users"]
+
+    doctor = users.find_one({
+        "_id": ObjectId(doctor_id),
+        "role": "doctor"
+    })
+
+    if not doctor:
+        return {
+            "success": False,
+            "message": "Doctor not found."
+        }, 404
+
+    consultation_fee = doctor.get("consultation_fee", 0)
+
+    current_month = datetime.now().strftime("%Y-%m")
+
+    # -----------------------------
+    # Doctor Income
+    # -----------------------------
+
+    monthly_income = 0
+    all_time_income = 0
+
+    appointments_cursor = appointments.find({
+        "doctor_id": ObjectId(doctor_id),
+        "payment_status": {
+            "$in": ["Paid", "Completed"]
+        }
+    })
+
+    for appointment in appointments_cursor:
+
+        fee = appointment.get("consultation_fee", consultation_fee)
+
+        all_time_income += fee
+
+        if appointment["appointment_date"].startswith(current_month):
+            monthly_income += fee
+
+    # -----------------------------
+    # Deductions
+    # -----------------------------
+
+    early_logout_count = attendance.count_documents({
+        "doctor_id": ObjectId(doctor_id),
+        "attendance_status": "Early Logout"
+    })
+
+    leave_count = doctor_leaves.count_documents({
+        "doctor_id": ObjectId(doctor_id),
+        "status": "Approved"
+    })
+
+    early_logout_deduction = early_logout_count * (consultation_fee * 0.10)
+
+    leave_deduction = leave_count * consultation_fee
+
+    total_deduction = early_logout_deduction + leave_deduction
+
+    # -----------------------------
+    # Hospital Income
+    # -----------------------------
+
+    hospital_income = 0
+
+    hospital_appointments = appointments.find({
+        "hospital_id": doctor["hospital_id"],
+        "payment_status": {
+            "$in": ["Paid", "Completed"]
+        }
+    })
+
+    for appointment in hospital_appointments:
+
+        hospital_income += appointment.get("consultation_fee", 0)
+
+    return {
+        "success": True,
+        "data": {
+            "monthly_income": round(monthly_income, 2),
+            "all_time_income": round(all_time_income, 2),
+            "early_logout_count": early_logout_count,
+            "leave_count": leave_count,
+            "early_logout_deduction": round(early_logout_deduction, 2),
+            "leave_deduction": round(leave_deduction, 2),
+            "total_deduction": round(total_deduction, 2),
+            "hospital_income": round(hospital_income, 2)
+        }
+    }, 200
+
+def get_doctor_appointments(doctor_id, date):
+
+    appointments = db["appointments"]
+    patients = db["patients"]
+
+    result = appointments.find({
+        "doctor_id": ObjectId(doctor_id),
+        "appointment_date": date
+    }).sort("appointment_time", 1)
+
+    data = []
+
+    for appointment in result:
+
+        patient = patients.find_one({
+            "_id": appointment["patient_id"]
+        })
+
+        if not patient:
+            continue
+
+        data.append({
+
+            "_id": str(appointment["_id"]),
+
+            "patient_name": patient["name"],
+
+            "patient_email": patient["email"],
+
+            "patient_phone": patient["phone"],
+
+            "appointment_time": appointment["appointment_time"],
+
+            "appointment_date": appointment["appointment_date"],
+
+            "status": appointment["appointment_status"]
+
+        })
+
+    return {
+
+        "success": True,
+
+        "data": data
+
+    }, 200
