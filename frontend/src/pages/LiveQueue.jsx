@@ -1,4 +1,3 @@
-import React from 'react';
 import { FiArrowLeft, FiClock, FiCheckCircle, FiUser } from 'react-icons/fi';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -6,8 +5,6 @@ export default function LiveQueue() {
   const navigate = useNavigate();
   const location = useLocation();
   const appointment = location.state?.appointment;
-  
-  // Mock data representing the full queue
   const queueList = [
     { id: 1, name: "Patient 1", token: 3, status: "CURRENT" },
     { id: 2, name: "Patient 2", token: 4, status: "NEXT" },
@@ -17,9 +14,6 @@ export default function LiveQueue() {
   ];
 
   const isCashPayment = appointment?.payment_method === 'cash';
-
-  // Helper to calculate wait time based on index
-  // Finds the index of the "NEXT" patient and calculates increments
   const getWaitTime = (currentIndex) => {
     const nextIndex = queueList.findIndex(p => p.status === "NEXT");
     if (currentIndex < nextIndex) return null;
