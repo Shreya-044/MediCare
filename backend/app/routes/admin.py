@@ -87,14 +87,20 @@ def update_doctor_route(doctor_id):
             "message": "Access denied."
         }), 403
 
-    # Doctor can update only himself
+    # Doctor can update only their own profile
     if current_role == "doctor":
-        if g.current_user["_id"] != doctor_id:
+
+        current_user_id = str(
+            g.current_user.get("_id") or
+            g.current_user.get("id") or
+            g.current_user.get("user_id")
+        )
+
+        if current_user_id != str(doctor_id):
             return jsonify({
                 "success": False,
                 "message": "You can update only your own profile."
             }), 403
-
 
     data = request.get_json()
 
@@ -103,7 +109,6 @@ def update_doctor_route(doctor_id):
             "success": False,
             "message": "Request body is required."
         }), 400
-
 
     hospital_id = g.current_user["hospital_id"]
 
@@ -196,16 +201,19 @@ def update_staff_route(staff_id):
             "message": "Access denied."
         }), 403
 
-
-    # Staff can update only themselves
     if current_role == "staff":
 
-        if g.current_user["_id"] != staff_id:
+        current_user_id = str(
+            g.current_user.get("_id") or
+            g.current_user.get("id") or
+            g.current_user.get("user_id")
+        )
+
+        if current_user_id != str(staff_id):
             return jsonify({
                 "success": False,
                 "message": "You can update only your own profile."
             }), 403
-
 
     data = request.get_json()
 
@@ -214,7 +222,6 @@ def update_staff_route(staff_id):
             "success": False,
             "message": "Request body is required."
         }), 400
-
 
     hospital_id = g.current_user["hospital_id"]
 
