@@ -17,7 +17,6 @@ export default function HospitalsView({ hospitals = [], admins = [], fetchHospit
     address: '', city: '', state: '', pincode: ''
   });
 
-  // Map keys to user-friendly labels matching reference style
   const fieldLabels = {
     hospital_name: 'Hospital Name', email: 'Email Address', phone: 'Phone Number', 
     emergency_phone: 'Emergency Phone', address: 'Address', city: 'City', 
@@ -115,18 +114,21 @@ export default function HospitalsView({ hospitals = [], admins = [], fetchHospit
                 const admin = admins.find(a => a.hospital_id === h._id);
                 return (
                 <div key={h._id} className="group flex flex-col p-5 bg-white border border-slate-100 shadow-sm rounded-3xl gap-4 hover:border-[#0b645b]/20 transition-all">
-                  <div className="flex items-center gap-4">
+                  <div className="flex flex-col items-center sm:flex-row sm:items-center gap-4 text-center sm:text-left">
                       <div className="bg-teal-50 p-4 rounded-2xl text-[#0b645b] shrink-0"><FiBriefcase size={20} /></div>
                       <div className="min-w-0 flex-1">
                           <p className="text-sm font-black text-slate-900 truncate">{h.hospital_name}</p>
                           <p className="text-[10px] text-slate-400 uppercase tracking-wider truncate">{h.email}</p>
                       </div>
-                      <StatusToggle status={h.status || 'active'} onToggle={() => toggleHospitalStatus(h)} />
                   </div>
-                  <div className="flex flex-col sm:flex-row gap-2 text-[11px] bg-slate-50 p-4 rounded-2xl text-slate-600 font-bold">
-                    <div className="flex items-center gap-2 flex-1 truncate"><FiMapPin className="text-[#0b645b]" /> {h.city}, {h.state}</div>
-                    <div className="flex items-center gap-2 flex-1"><FiPhone className="text-[#0b645b]" /> {h.phone}</div>
-                    <div className="flex items-center gap-2 flex-1 truncate"><FiUser className="text-[#0b645b]" /> {admin ? admin.name : "Not Assigned"}</div>
+                  <div className="flex flex-col gap-2 text-[11px] bg-slate-50 p-4 rounded-2xl text-slate-600 font-bold">
+                    <div className="flex items-center gap-2 truncate"><FiMapPin className="text-[#0b645b]" /> {h.city}, {h.state}</div>
+                    <div className="flex items-center gap-2"><FiPhone className="text-[#0b645b]" /> {h.phone}</div>
+                    <div className="flex items-center gap-2 truncate"><FiUser className="text-[#0b645b]" /> {admin ? admin.name : "Not Assigned"}</div>
+                  </div>
+                  <div className="flex items-center justify-between mt-2 pt-3 border-t border-slate-100">
+                    <StatusToggle status={h.status || 'active'} onToggle={() => toggleHospitalStatus(h)} />
+                    <button className="text-slate-400 hover:text-[#0b645b] transition p-2 rounded-xl bg-slate-50"><FiEdit2 size={16} /></button>
                   </div>
                 </div>
               )})}

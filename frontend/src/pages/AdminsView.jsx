@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { 
   FiUser, FiPlus, FiShield, FiBriefcase, FiSearch, 
-  FiChevronLeft, FiChevronRight, FiChevronsLeft, FiChevronsRight, FiX, FiPhone, FiChevronDown
+  FiChevronLeft, FiChevronRight, FiChevronsLeft, FiChevronsRight, FiX, FiPhone, FiChevronDown, FiEdit2
 } from "react-icons/fi";
 import api from "../services/api";
 
@@ -90,17 +90,20 @@ export default function AdminsView({ hospitals = [], refreshActivities }) {
           ) : (
             list.map((admin) => (
               <div key={admin._id} className="group flex flex-col p-5 bg-white border border-slate-100 shadow-sm rounded-3xl gap-4 hover:border-[#0b645b]/20 transition-all">
-                <div className="flex items-center gap-4">
+                <div className="flex flex-col items-center sm:flex-row sm:items-center gap-4 text-center sm:text-left">
                   <div className="bg-teal-50 p-4 rounded-2xl text-[#0b645b] shrink-0"><FiUser size={20} /></div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-black text-slate-900 truncate">{admin.name}</p>
                     <p className="text-[10px] text-slate-400 uppercase tracking-wider truncate">{admin.email}</p>
                   </div>
-                  <StatusToggle status={admin.status || 'active'} onToggle={() => toggleAdminStatus(admin)} />
                 </div>
-                <div className="flex flex-col sm:flex-row gap-2 text-[11px] bg-slate-50 p-4 rounded-2xl text-slate-600 font-bold">
-                  <div className="flex items-center gap-2 flex-1"><FiPhone className="text-[#0b645b]" /> {admin.phone || "No phone"}</div>
-                  <div className="flex items-center gap-2 flex-1 truncate"><FiBriefcase className="text-[#0b645b]" /> {hospitals.find(h => h._id === admin.hospital_id)?.hospital_name || "Unassigned"}</div>
+                <div className="flex flex-col gap-2 text-[11px] bg-slate-50 p-4 rounded-2xl text-slate-600 font-bold">
+                  <div className="flex items-center gap-2 truncate"><FiPhone className="text-[#0b645b]" /> {admin.phone || "No phone"}</div>
+                  <div className="flex items-center gap-2 truncate"><FiBriefcase className="text-[#0b645b]" /> {hospitals.find(h => h._id === admin.hospital_id)?.hospital_name || "Unassigned"}</div>
+                </div>
+                <div className="flex items-center justify-between mt-2 pt-3 border-t border-slate-100">
+                  <StatusToggle status={admin.status || 'active'} onToggle={() => toggleAdminStatus(admin)} />
+                  <button className="text-slate-400 hover:text-[#0b645b] transition p-2 rounded-xl bg-slate-50"><FiEdit2 size={16} /></button>
                 </div>
               </div>
             ))
@@ -143,7 +146,6 @@ export default function AdminsView({ hospitals = [], refreshActivities }) {
             <input placeholder="Phone Number" className="p-4 bg-slate-50 rounded-2xl text-sm font-bold border-2 border-transparent focus:border-[#0b645b] outline-none transition" value={newAdmin.phone} onChange={(e) => setNewAdmin({ ...newAdmin, phone: e.target.value })} />
             <input type="password" placeholder="Temporary Password" className="p-4 bg-slate-50 rounded-2xl text-sm font-bold border-2 border-transparent focus:border-[#0b645b] outline-none transition" value={newAdmin.password} onChange={(e) => setNewAdmin({ ...newAdmin, password: e.target.value })} />
             
-            {/* Polished Dropdown Wrapper */}
             <div className="col-span-1 sm:col-span-2 lg:col-span-4 relative group">
               <select 
                 className="w-full p-4 bg-slate-50 rounded-2xl text-sm font-bold border-2 border-transparent focus:border-[#0b645b] outline-none transition appearance-none cursor-pointer group-hover:bg-slate-100" 
