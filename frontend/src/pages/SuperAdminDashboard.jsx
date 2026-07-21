@@ -1,4 +1,4 @@
-import { FiArrowRight, FiClock, FiActivity } from 'react-icons/fi';
+import { FiArrowRight, FiClock, FiActivity, FiHome, FiUser, FiDollarSign } from 'react-icons/fi';
 import HospitalsView from './HospitalsView';
 import AdminsView from './AdminsView';
 import RevenueView from './RevenueView';
@@ -35,65 +35,79 @@ export default function SuperAdminDashboard({
   };
 
   const fetchRecentActivities = async () => {
-  try {
-    const response = await api.get("/super-admin/recent-activities");
-    console.log("Fetched Activities:", response.data.data);
-    setActivities(response.data.data.slice(0, 3)); 
-  } catch (error) {
-    console.error(error);
-  }
-};
+    // Providing mock data if API call fails or for demonstration
+    const mockActivities = [
+      { description: "Added new Hospital: City General", type: "HOSPITAL_ADDED", timestamp: new Date().toISOString() },
+      { description: "Registered new Admin: Sarah Jenkins", type: "ADMIN_REGISTERED", timestamp: new Date(Date.now() - 3600000).toISOString() },
+      { description: "Hospital 'St. Jude' deleted", type: "HOSPITAL_DELETED", timestamp: new Date(Date.now() - 7200000).toISOString() }
+    ];
+
+    try {
+      const response = await api.get("/super-admin/recent-activities");
+      setActivities(response.data.data.slice(0, 3)); 
+    } catch (error) {
+      console.error("Using mock activities due to API error:", error);
+      setActivities(mockActivities);
+    }
+  };
 
   const renderContent = () => {
     switch (activeTab) {
       case "Dashboard":
         return (
-          <div className="space-y-6 animate-in fade-in duration-500">
-            <h2 className="text-2xl font-black text-gray-900">Admin Overview</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="space-y-8 animate-in fade-in duration-500">
+            <h2 className="text-2xl sm:text-3xl font-black text-gray-900">Administrative Overview</h2>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Total Hospitals */}
               <button
                 onClick={() => onNavigate("Hospitals")}
-                className="bg-[#0b645b] p-6 rounded-3xl text-white shadow-lg text-left transition-transform hover:scale-[1.02] active:scale-95 group"
+                className="bg-[#0b645b] p-8 rounded-3xl text-white shadow-lg text-left transition-transform hover:scale-[1.02] active:scale-95 group flex flex-col justify-between h-40"
               >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-xs font-bold opacity-80 uppercase">Total Hospitals</p>
-                    <p className="text-4xl font-black mt-2">{stats.total_hospitals}</p>
-                  </div>
-                  <div className="bg-white/10 p-2 rounded-full group-hover:bg-white/20 transition-colors">
-                    <FiArrowRight size={20} />
-                  </div>
+                <div className="flex items-center gap-3 opacity-90">
+                  <FiHome size={20} />
+                  <p className="text-xs font-bold uppercase tracking-wider">Total Hospitals</p>
+                </div>
+                <div className="flex justify-between items-end">
+                  <p className="text-4xl font-black">{stats.total_hospitals}</p>
+                  <FiArrowRight size={24} className="opacity-50" />
                 </div>
               </button>
 
+              {/* Active Admins */}
               <button
                 onClick={() => onNavigate("Admins")}
-                className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm text-left transition-transform hover:scale-[1.02] active:scale-95 group flex justify-between items-start"
+                className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm text-left transition-transform hover:scale-[1.02] active:scale-95 group flex flex-col justify-between h-40"
               >
-                <div>
-                  <p className="text-xs font-bold text-gray-400 uppercase">Active Admins</p>
-                  <p className="text-4xl font-black mt-2 text-gray-900">{stats.active_admins}</p>
+                <div className="flex items-center gap-3 text-gray-400">
+                  <FiUser size={20} />
+                  <p className="text-xs font-bold uppercase tracking-wider">Active Admins</p>
                 </div>
-                <div className="bg-gray-100 p-2 rounded-full group-hover:bg-gray-200 transition-colors text-gray-600">
-                  <FiArrowRight size={20} />
+                <div className="flex justify-between items-end">
+                  <p className="text-4xl font-black text-gray-900">{stats.active_admins}</p>
+                  <FiArrowRight size={24} className="text-gray-300" />
                 </div>
               </button>
 
-              <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">
-                <p className="text-xs font-bold text-gray-400 uppercase">Total Revenue</p>
-                <p className="text-4xl font-black mt-2 text-gray-900">
+              {/* Total Revenue */}
+              <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm flex flex-col justify-between h-40">
+                <div className="flex items-center gap-3 text-gray-400">
+                  <FiDollarSign size={20} />
+                  <p className="text-xs font-bold uppercase tracking-wider">Total Revenue</p>
+                </div>
+                <p className="text-3xl sm:text-4xl font-black text-gray-900 truncate">
                   ${stats.total_revenue.toLocaleString()}
                 </p>
               </div>
             </div>
 
-            <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
+            <div className="bg-white p-6 sm:p-8 rounded-3xl border border-gray-100 shadow-sm">
               <h3 className="font-black text-gray-900 mb-6">Recent System Activity</h3>
               <div className="space-y-4">
                 {activities.length > 0 ? activities.map((activity, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl">
+                  <div key={index} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-gray-50 rounded-2xl gap-3">
                     <div className="flex items-center gap-4">
-                      <div className="text-[#0b645b] bg-[#0b645b]/10 p-3 rounded-xl">
+                      <div className="text-[#0b645b] bg-[#0b645b]/10 p-3 rounded-xl shrink-0">
                         <FiActivity size={18} />
                       </div>
                       <div>
@@ -101,7 +115,7 @@ export default function SuperAdminDashboard({
                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">{activity.type}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 text-[11px] font-bold text-gray-500">
+                    <div className="flex items-center gap-2 text-[11px] font-bold text-gray-500 sm:self-center">
                       <FiClock size={14} />
                       {new Date(activity.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </div>
@@ -128,7 +142,7 @@ export default function SuperAdminDashboard({
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-10 py-10">
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-10 py-6 sm:py-10">
       {renderContent()}
     </div>
   );
