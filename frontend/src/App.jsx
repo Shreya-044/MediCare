@@ -20,6 +20,8 @@ import PatientReport from "./pages/PatientReport";
 import DoctorAppointments from "./pages/DoctorAppointments";
 import DoctorPatientFiles from "./pages/DoctorPatientFiles";
 import LiveQueue from "./pages/LiveQueue";
+import { LoadingProvider } from "./context/LoadingContext";
+import Loader from "./components/Loader";
 
 function AppContent() {
   const navigate = useNavigate();
@@ -95,111 +97,121 @@ function AppContent() {
         setIsLoggedIn={setIsLoggedIn}
         user={user}
       />
+      <LoadingProvider>
+        <Loader />
+        <main className="grow">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route
+              path="/login"
+              element={
+                <Login
+                  onLogin={(u) => {
+                    setIsLoggedIn(true);
+                    setUser(u);
+                  }}
+                />
+              }
+            />
+            <Route
+              path="/cms-login"
+              element={
+                <CMSLogin setIsLoggedIn={setIsLoggedIn} setUser={setUser} />
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <UserProfile
+                  userName={user?.name}
+                  userEmail={user?.email}
+                  userRole={user?.role}
+                />
+              }
+            />
+            <Route
+              path="/settings"
+              element={<UserSettings userName={user?.name} />}
+            />
+            <Route
+              path="/super-admin/:tab"
+              element={
+                <SuperAdminDashboard
+                  activeTab={activeTab}
+                  hospitals={hospitals}
+                  fetchHospitals={fetchHospitals}
+                  onNavigate={handleSuperAdminNav}
+                />
+              }
+            />
+            <Route
+              path="/admin/dashboard"
+              element={
+                <AdminDashboard
+                  activeTab="Dashboard"
+                  onNavigate={handleAdminNav}
+                />
+              }
+            />
+            <Route
+              path="/admin/doctors"
+              element={
+                <AdminDashboard
+                  activeTab="Doctors"
+                  onNavigate={handleAdminNav}
+                />
+              }
+            />
+            <Route
+              path="/admin/staff"
+              element={
+                <AdminDashboard activeTab="Staff" onNavigate={handleAdminNav} />
+              }
+            />
+            <Route
+              path="/admin/patients"
+              element={
+                <AdminDashboard
+                  activeTab="Patients"
+                  onNavigate={handleAdminNav}
+                />
+              }
+            />
+            <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
+            <Route
+              path="/doctor/appointments"
+              element={<DoctorAppointments />}
+            />
+            <Route
+              path="/doctor/patient-files"
+              element={<DoctorPatientFiles />}
+            />
+            <Route path="/staff/dashboard" element={<StaffDashboard />} />
+            <Route
+              path="/appointment/:hospitalId"
+              element={<AppointmentForm />}
+            />
 
-      <main className="grow">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route
-            path="/login"
-            element={
-              <Login
-                onLogin={(u) => {
-                  setIsLoggedIn(true);
-                  setUser(u);
-                }}
-              />
-            }
-          />
-          <Route
-            path="/cms-login"
-            element={
-              <CMSLogin setIsLoggedIn={setIsLoggedIn} setUser={setUser} />
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <UserProfile
-                userName={user?.name}
-                userEmail={user?.email}
-                userRole={user?.role}
-              />
-            }
-          />
-          <Route
-            path="/settings"
-            element={<UserSettings userName={user?.name} />}
-          />
-          <Route
-            path="/super-admin/:tab"
-            element={
-              <SuperAdminDashboard
-                activeTab={activeTab}
-                hospitals={hospitals}
-                fetchHospitals={fetchHospitals}
-                onNavigate={handleSuperAdminNav}
-              />
-            }
-          />
-          <Route
-            path="/admin/dashboard"
-            element={
-              <AdminDashboard
-                activeTab="Dashboard"
-                onNavigate={handleAdminNav}
-              />
-            }
-          />
-          <Route
-            path="/admin/doctors"
-            element={
-              <AdminDashboard activeTab="Doctors" onNavigate={handleAdminNav} />
-            }
-          />
-          <Route
-            path="/admin/staff"
-            element={
-              <AdminDashboard activeTab="Staff" onNavigate={handleAdminNav} />
-            }
-          />
-          <Route
-            path="/admin/patients"
-            element={
-              <AdminDashboard
-                activeTab="Patients"
-                onNavigate={handleAdminNav}
-              />
-            }
-          />
-          <Route path="/doctor/dashboard" element={<DoctorDashboard />} />
-          <Route path="/doctor/appointments" element={<DoctorAppointments />} />
-          <Route path="/doctor/patient-files" element={<DoctorPatientFiles />} />
-          <Route path="/staff/dashboard" element={<StaffDashboard />} />
-          <Route
-            path="/appointment/:hospitalId"
-            element={<AppointmentForm />}
-          />
-
-          <Route
-            path="/dashboard"
-            element={
-              <PatientDashboard
-                activeTab="Dashboard"
-                onNavigate={(tab) => {
-                  if (tab === "My Appointments") navigate("/appointments");
-                  else if (tab === "My Reports") navigate("/reports");
-                  else navigate("/dashboard");
-                }}
-              />
-            }
-          />
-          <Route path="//appointment/:id/live" element={<LiveQueue />} />
-          <Route path="/appointments" element={<PatientAppointment />} />
-          <Route path="/reports" element={<PatientReport />} />
-
-        </Routes>
-      </main>
-      <Footer />
+            <Route
+              path="/dashboard"
+              element={
+                <PatientDashboard
+                  activeTab="Dashboard"
+                  onNavigate={(tab) => {
+                    if (tab === "My Appointments") navigate("/appointments");
+                    else if (tab === "My Reports") navigate("/reports");
+                    else navigate("/dashboard");
+                  }}
+                />
+              }
+            />
+            <Route path="//appointment/:id/live" element={<LiveQueue />} />
+            <Route path="/appointments" element={<PatientAppointment />} />
+            <Route path="/reports" element={<PatientReport />} />
+          </Routes>
+        </main>
+        <Footer />
+      </LoadingProvider>
     </div>
   );
 }

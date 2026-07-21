@@ -1,20 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import api from "../services/api";
-
 import {
-  FiUser,
-  FiMail,
-  FiEdit,
-  FiSave,
-  FiShield,
-  FiLayers,
-  FiBriefcase,
-  FiDollarSign,
-  FiClock,
-  FiActivity,
-  FiX,
-  FiCamera,
-  FiTrash2
+  FiUser, FiMail, FiEdit, FiSave, FiShield, FiLayers, FiBriefcase,
+  FiDollarSign, FiClock, FiActivity, FiX, FiCamera, FiTrash2, FiCheckCircle, FiAlertCircle
 } from "react-icons/fi";
 
 export default function UserProfile() {
@@ -24,15 +12,19 @@ export default function UserProfile() {
   const [hospital, setHospital] = useState(null);
   const [hospitalImage, setHospitalImage] = useState(null);
   const [profile, setProfile] = useState({});
+  const [notification, setNotification] = useState({ show: false, message: "", type: "" });
+
+  const showNotification = (message, type = "success") => {
+    setNotification({ show: true, message, type });
+    setTimeout(() => setNotification({ show: false, message: "", type: "" }), 3000);
+  };
 
   useEffect(() => {
     const loadProfile = async () => {
       const storedUser = JSON.parse(localStorage.getItem("user"));
       if (!storedUser) return;
-
       const userId = storedUser._id || storedUser.id;
       setCurrentUser({ ...storedUser, _id: userId });
-
       try {
         let response;
         if (storedUser.role === "doctor") {
@@ -48,7 +40,6 @@ export default function UserProfile() {
           setProfile(adminProfile);
           return;
         }
-
         const databaseProfile = response.data.data;
         const completeProfile = { ...storedUser, ...databaseProfile, _id: userId };
         setCurrentUser(completeProfile);
@@ -59,7 +50,6 @@ export default function UserProfile() {
         setProfile({ ...storedUser, _id: userId });
       }
     };
-
     loadProfile();
   }, []);
 
@@ -114,25 +104,22 @@ export default function UserProfile() {
           });
           if (response.data.success) {
             setHospital((prev) => ({ ...prev, image_url: response.data.image_url }));
-            alert("Hospital image updated successfully.");
+            showNotification("Hospital image updated successfully.");
           }
         }
         setHospitalImage(null);
         setIsEditing(false);
         return;
       }
-
       const id = profile._id || profile.id;
       if (!id) return;
-
       let endpoint = role === "doctor" ? `/admin/update-doctor/${id}` : `/admin/update-staff/${id}`;
       let updateData = role === "doctor" 
         ? { name: profile.name, email: profile.email, department: profile.department, designation: profile.designation, consultation_fee: Number(profile.consultation_fee), experience: Number(profile.experience), available_slots: profile.available_slots }
         : { name: profile.name, email: profile.email, designation: profile.designation };
-
       const response = await api.put(endpoint, updateData);
       if (response.data.success) {
-        alert("Profile updated successfully.");
+        showNotification("Profile updated successfully.");
         const updatedUser = { ...currentUser, ...profile, _id: id };
         localStorage.setItem("user", JSON.stringify(updatedUser));
         setCurrentUser(updatedUser);
@@ -140,20 +127,27 @@ export default function UserProfile() {
         setIsEditing(false);
       }
     } catch (error) {
-      alert(error.response?.data?.message || "Profile update failed.");
+      showNotification(error.response?.data?.message || "Profile update failed.", "error");
     } finally {
       setIsSaving(false);
     }
   };
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-10 py-10 animate-in fade-in duration-300">
-      <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-10 py-10 animate-in fade-in duration-300">
+      {/* Modern Center-Aligned Notification Popup */}
+      {notification.show && (
+        <div className="fixed top-5 left-1/2 transform -translate-x-1/2 z-[200] w-[90%] sm:w-auto px-6 py-4 rounded-2xl shadow-2xl flex items-center justify-center gap-3 text-white bg-[#0b645b] animate-in slide-in-from-top-5">
+          {notification.type === "error" ? <FiAlertCircle size={20} /> : <FiCheckCircle size={20} />}
+          <p className="text-sm font-bold text-center">{notification.message}</p>
+        </div>
+      )}
+
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
         <div>
           <h2 className="text-2xl font-black text-gray-900">My Profile</h2>
-          <p className="text-sm text-gray-400 mt-1">Manage your personal and professional information</p>
+          <p className="text-sm text-gray-400 mt-1">Manage personal and professional information</p>
         </div>
-
         {!isEditing ? (
           <button onClick={() => setIsEditing(true)} className="flex items-center gap-2 px-6 py-2 bg-[#0b645b] text-white rounded-full text-xs font-bold hover:bg-[#084e46] transition shadow-md w-full sm:w-auto justify-center">
             <FiEdit /> Edit Profile
@@ -174,17 +168,15 @@ export default function UserProfile() {
         {role === "admin" && (
           <div className="p-5 bg-gray-50 rounded-2xl flex flex-col items-center">
             <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-4 w-full text-left">Hospital Image</p>
-            
-            <div className="w-full h-64 rounded-2xl overflow-hidden bg-gray-200 flex items-center justify-center mb-4 border border-gray-100 relative group">
+            <div className="w-full h-48 sm:h-64 rounded-2xl overflow-hidden bg-gray-200 flex items-center justify-center mb-4 border border-gray-100">
               {hospitalImage ? (
                 <img src={URL.createObjectURL(hospitalImage)} alt="Preview" className="w-full h-full object-cover" />
               ) : hospital?.image_url ? (
-                <img src={hospital.image_url} alt={hospital.hospital_name} className="w-full h-full object-cover" />
+                <img src={hospital.image_url} alt="Hospital" className="w-full h-full object-cover" />
               ) : (
                 <FiCamera size={60} className="text-gray-400" />
               )}
             </div>
-
             {isEditing && (
               <div className="flex gap-2 w-full justify-center">
                 <label className="cursor-pointer bg-[#0b645b] text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-[#084e46]">
@@ -217,9 +209,7 @@ export default function UserProfile() {
               {isEditing ? (
                 <input name={field.name} type={field.type} value={profile[field.name] ?? ""} onChange={handleChange} className="w-full bg-transparent border-b-2 border-[#0b645b]/30 focus:border-[#0b645b] outline-none text-sm font-bold text-gray-900 py-1" />
               ) : (
-                <div className="text-sm font-bold text-gray-900 mt-1 truncate">
-                  {profile[field.name] ? profile[field.name] : <span className="text-gray-300 font-normal italic text-xs">Not provided</span>}
-                </div>
+                <div className="text-sm font-bold text-gray-900 mt-1 truncate">{profile[field.name] || <span className="text-gray-300 font-normal italic text-xs">Not provided</span>}</div>
               )}
             </div>
           </div>
