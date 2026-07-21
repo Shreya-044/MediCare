@@ -116,7 +116,7 @@ const Navbar = ({ isLoggedIn, setIsLoggedIn, user }) => {
             {["super_admin", "admin", "doctor", "staff"].includes(role) ? "MediCare CMS" : "MediCare Portals"}
           </h1>
           <p className="text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">
-            {["super_admin", "admin", "doctor", "staff"].includes(role) ? "Hospital Management System" : "Doctor Appointment & Live Queue"}
+            {["super_admin", "admin", "doctor", "staff"].includes(role) ? "Hospital Management System" : "Doctor's Appointment & Live Queue"}
           </p>
         </div>
 
@@ -159,7 +159,12 @@ const Navbar = ({ isLoggedIn, setIsLoggedIn, user }) => {
             </div>
           </>
         ) : (
-          <Link to="/login" className="bg-[#0b645b] px-4 md:px-6 py-2 rounded-lg font-bold text-white text-[11px] md:text-[12px] hover:bg-[#084e46]">SIGN IN / LOG IN</Link>
+          <Link 
+            to="/login" 
+            className="bg-[#0b645b] px-3 py-2 md:px-6 md:py-2 rounded-lg font-bold text-white text-[10px] md:text-[12px] hover:bg-[#084e46] transition-all whitespace-nowrap"
+          >
+            SIGN IN / LOG IN
+          </Link>
         )}
       </div>
 
