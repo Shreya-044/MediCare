@@ -139,7 +139,7 @@ const Navbar = ({ isLoggedIn, setIsLoggedIn, user }) => {
               ))}
             </div>
 
-            {/* User Dropdown */}
+            {/* User Dropdown Desktop */}
             <div className="hidden md:block relative">
               <button onClick={() => setDropdown(!dropdown)} className="flex items-center gap-2 p-1 bg-gray-100 rounded-full hover:bg-gray-200 transition">
                 <div className="bg-[#0b645b] p-2 rounded-full"><FiUserCheck className="text-white text-sm" /></div>
@@ -151,7 +151,7 @@ const Navbar = ({ isLoggedIn, setIsLoggedIn, user }) => {
               {dropdown && (
                 <div className="absolute right-0 mt-3 w-52 bg-white rounded-3xl shadow-2xl border border-gray-100 p-2 z-50">
                   <button onClick={() => { setDropdown(false); navigate("/profile"); }} className="flex items-center w-full px-4 py-3 text-xs font-bold text-gray-700 hover:bg-gray-50 rounded-xl transition"><FiUser className="mr-3 text-[#0b645b]" /> User Profile</button>
-                  <button onClick={() => { setDropdown(false); navigate("/settings"); }} className="flex items-center w-full px-4 py-3 text-xs font-bold text-gray-700 hover:bg-gray-50 rounded-xl"><FiSettings className="mr-3 text-[#0b645b]" /> User Settings</button>
+                  <button onClick={() => { setDropdown(false); navigate("/settings"); }} className="flex items-center w-full px-4 py-3 text-xs font-bold text-gray-700 hover:bg-gray-50 rounded-xl transition"><FiSettings className="mr-3 text-[#0b645b]" /> User Settings</button>
                   <div className="border-t border-gray-100 my-1"></div>
                   <button onClick={handleLogout} className="flex items-center w-full px-4 py-3 text-xs font-bold text-red-500 hover:bg-red-50 rounded-xl"><FiLogOut className="mr-3" /> Logout</button>
                 </div>
@@ -169,7 +169,10 @@ const Navbar = ({ isLoggedIn, setIsLoggedIn, user }) => {
           {tabs.map((tab) => (
             <button key={tab} onClick={() => handleNavigation(tab)} className="block w-full text-left p-3 font-bold text-xs uppercase text-gray-700 hover:bg-gray-50 rounded-xl">{tab}</button>
           ))}
-          <button onClick={handleLogout} className="block w-full text-left p-3 font-bold text-xs uppercase text-red-500 hover:bg-red-50 rounded-xl">Logout</button>
+          <div className="border-t border-gray-100 my-2"></div>
+          <button onClick={() => { setMobileMenuOpen(false); navigate("/profile"); }} className="block w-full text-left p-3 font-bold text-xs uppercase text-gray-700 hover:bg-gray-50 rounded-xl"><FiUser className="inline mr-2" /> User Profile</button>
+          <button onClick={() => { setMobileMenuOpen(false); navigate("/settings"); }} className="block w-full text-left p-3 font-bold text-xs uppercase text-gray-700 hover:bg-gray-50 rounded-xl"><FiSettings className="inline mr-2" /> User Settings</button>
+          <button onClick={handleLogout} className="block w-full text-left p-3 font-bold text-xs uppercase text-red-500 hover:bg-red-50 rounded-xl"><FiLogOut className="inline mr-2" /> Logout</button>
         </div>
       )}
     </header>

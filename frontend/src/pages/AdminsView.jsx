@@ -1,17 +1,28 @@
 import { useState, useEffect, useMemo } from "react";
 import { 
-  FiUser, FiPlus, FiTrash2, FiShield, FiBriefcase, FiAlertCircle, FiSearch, 
-  FiChevronLeft, FiChevronRight, FiChevronsLeft, FiChevronsRight 
+  FiUser, FiPlus, FiShield, FiBriefcase, FiSearch, 
+  FiChevronLeft, FiChevronRight, FiChevronsLeft, FiChevronsRight, FiX, FiPhone, FiChevronDown
 } from "react-icons/fi";
 import api from "../services/api";
 
 export default function AdminsView({ hospitals = [], refreshActivities }) {
   const [admins, setAdmins] = useState([]);
+  const [showForm, setShowForm] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 4;
+  const [itemsPerPage, setItemsPerPage] = useState(4);
+  const [activePage, setActivePage] = useState(1);
+  const [inactivePage, setInactivePage] = useState(1);
 
-  const [newAdmin, setNewAdmin] = useState({ name: "", email: "", password: "", hospital_id: "" });
+  const [newAdmin, setNewAdmin] = useState({ name: "", email: "", password: "", phone: "", hospital_id: "" });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setItemsPerPage(window.innerWidth < 640 ? 3 : 4);
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => { fetchAdmins(); }, []);
 
@@ -35,21 +46,22 @@ export default function AdminsView({ hospitals = [], refreshActivities }) {
   };
 
   const StatusToggle = ({ status, onToggle }) => (
-    <button onClick={onToggle} className={`relative flex items-center h-7 w-16 rounded-full transition-colors duration-300 ${status === 'active' ? 'bg-green-500' : 'bg-gray-300'}`}>
-      <div className={`absolute top-1 left-1 bg-white h-5 w-5 rounded-full shadow-md transition-transform duration-300 ${status === 'active' ? 'translate-x-9' : 'translate-x-0'}`} />
-      <span className={`text-[10px] font-black uppercase text-white ${status === 'active' ? 'ml-2' : 'ml-7'}`}>{status === 'active' ? 'On' : 'Off'}</span>
+    <button 
+      onClick={onToggle} 
+      className={`relative flex items-center h-7 w-14 rounded-full transition-all duration-300 ${status === 'active' ? 'bg-[#0b645b]' : 'bg-slate-200'}`}
+    >
+      <div className={`absolute top-1 left-1 bg-white h-5 w-5 rounded-full shadow-sm transition-transform duration-300 ${status === 'active' ? 'translate-x-7' : 'translate-x-0'}`} />
     </button>
   );
 
-  const filteredAdmins = useMemo(() => {
-    return admins.filter(a => 
-      a.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-      a.email.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [admins, searchQuery]);
+  const activeAdmins = useMemo(() => admins.filter(a => (a.status === 'active' || !a.status) && (a.name.toLowerCase().includes(searchQuery.toLowerCase()) || a.email.toLowerCase().includes(searchQuery.toLowerCase()))), [admins, searchQuery]);
+  const inactiveAdmins = useMemo(() => admins.filter(a => a.status === 'inactive' && (a.name.toLowerCase().includes(searchQuery.toLowerCase()) || a.email.toLowerCase().includes(searchQuery.toLowerCase()))), [admins, searchQuery]);
 
-  const totalPages = Math.ceil(filteredAdmins.length / itemsPerPage);
-  const paginatedAdmins = filteredAdmins.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const activeTotalPages = Math.ceil(activeAdmins.length / itemsPerPage) || 1;
+  const inactiveTotalPages = Math.ceil(inactiveAdmins.length / itemsPerPage) || 1;
+
+  const paginatedActive = activeAdmins.slice((activePage - 1) * itemsPerPage, activePage * itemsPerPage);
+  const paginatedInactive = inactiveAdmins.slice((inactivePage - 1) * itemsPerPage, inactivePage * itemsPerPage);
 
   const handleAddAdmin = async () => {
     try {
@@ -58,85 +70,113 @@ export default function AdminsView({ hospitals = [], refreshActivities }) {
       if (response.data.success) {
         fetchAdmins();
         if (refreshActivities) refreshActivities();
-        setNewAdmin({ name: "", email: "", password: "", hospital_id: "" });
+        setNewAdmin({ name: "", email: "", password: "", phone: "", hospital_id: "" });
+        setShowForm(false);
       }
     } catch (error) { console.error(error); }
   };
 
-  return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      <div>
-        <h2 className="text-2xl font-black text-gray-900">Admin Management</h2>
-        <p className="text-sm text-gray-500 font-medium">Assign and oversee hospital administrators across your network.</p>
-      </div>
-
-      {/* Add Admin Form */}
-      <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="bg-[#0b645b] p-2 rounded-lg text-white"><FiShield /></div>
-          <h3 className="font-black text-gray-900">Register New Administrator</h3>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <input placeholder="Admin Full Name" className="p-3 bg-gray-50 rounded-xl text-sm font-bold border border-transparent focus:border-[#0b645b] outline-none" value={newAdmin.name} onChange={(e) => setNewAdmin({ ...newAdmin, name: e.target.value })} />
-          <input placeholder="Email Address" className="p-3 bg-gray-50 rounded-xl text-sm font-bold border border-transparent focus:border-[#0b645b] outline-none" value={newAdmin.email} onChange={(e) => setNewAdmin({ ...newAdmin, email: e.target.value })} />
-          <input type="password" placeholder="Temporary Password" className="p-3 bg-gray-50 rounded-xl text-sm font-bold border border-transparent focus:border-[#0b645b] outline-none" value={newAdmin.password} onChange={(e) => setNewAdmin({ ...newAdmin, password: e.target.value })} />
-          <select className="p-3 bg-gray-50 rounded-xl text-sm font-bold border border-transparent focus:border-[#0b645b] outline-none" value={newAdmin.hospital_id} onChange={(e) => setNewAdmin({ ...newAdmin, hospital_id: e.target.value })}>
-            <option value="">Select Hospital</option>
-            {hospitals.map(h => <option key={h._id} value={h._id}>{h.hospital_name}</option>)}
-          </select>
-        </div>
-        <button onClick={handleAddAdmin} className="mt-6 w-full md:w-auto px-8 py-3 bg-[#0b645b] text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#084e46]">
-          <FiPlus /> Register Admin
-        </button>
-      </div>
-
-      {/* Admin List */}
-      <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
+  const renderAdminList = (list, fullList, page, setPage, totalPages, isInactive = false) => {
+    return (
+      <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-100 shadow-sm">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-lg font-black flex items-center gap-2">Registered Admins <span className="bg-gray-100 px-2 py-0.5 rounded-md text-xs text-gray-500">{filteredAdmins.length}</span></h2>
-          <div className="relative">
-            <FiSearch className="absolute left-3 top-3.5 text-gray-400" />
-            <input placeholder="Search admins..." className="pl-10 pr-4 py-2 bg-gray-50 rounded-xl text-sm font-bold outline-none border border-transparent focus:border-[#0b645b]" value={searchQuery} onChange={(e) => {setSearchQuery(e.target.value); setCurrentPage(1);}} />
-          </div>
+          <h2 className="text-base font-black text-slate-800">{isInactive ? "Inactive Admins" : "Registered Admins"}</h2>
+          <span className="text-[10px] font-bold bg-slate-50 border border-slate-100 px-3 py-1 rounded-full text-slate-500">{fullList.length} Records</span>
         </div>
-
-        <div className="space-y-4">
-          {paginatedAdmins.length === 0 ? (
-            <div className="text-center py-12 border-2 border-dashed border-gray-100 rounded-3xl">
-              <FiAlertCircle className="mx-auto text-gray-300 mb-3" size={32} />
-              <p className="text-gray-400 font-bold">No admins found.</p>
-            </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {list.length === 0 ? (
+            <div className="col-span-full text-center py-10 text-slate-400 font-bold text-sm bg-slate-50 rounded-2xl">No {isInactive ? "inactive" : "active"} admins found.</div>
           ) : (
-            paginatedAdmins.map((admin) => (
-              <div key={admin._id} className="group flex items-center justify-between p-5 bg-gray-50 hover:bg-white border border-gray-100 hover:shadow-md rounded-2xl transition-all">
+            list.map((admin) => (
+              <div key={admin._id} className="group flex flex-col p-5 bg-white border border-slate-100 shadow-sm rounded-3xl gap-4 hover:border-[#0b645b]/20 transition-all">
                 <div className="flex items-center gap-4">
-                  <div className="bg-[#0b645b]/10 p-4 rounded-full text-[#0b645b]"><FiUser /></div>
-                  <div>
-                    <p className="text-sm font-black text-gray-900">{admin.name}</p>
-                    <p className="text-[10px] text-gray-400 uppercase tracking-widest">{admin.email}</p>
+                  <div className="bg-teal-50 p-4 rounded-2xl text-[#0b645b] shrink-0"><FiUser size={20} /></div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-black text-slate-900 truncate">{admin.name}</p>
+                    <p className="text-[10px] text-slate-400 uppercase tracking-wider truncate">{admin.email}</p>
                   </div>
+                  <StatusToggle status={admin.status || 'active'} onToggle={() => toggleAdminStatus(admin)} />
                 </div>
-                <div className="flex items-center gap-6">
-                  <div className="text-[10px] font-bold text-gray-500 flex items-center gap-2"><FiBriefcase /> {hospitals.find(h => h._id === admin.hospital_id)?.hospital_name || "Unassigned"}</div>
-                  <StatusToggle status={admin.status} onToggle={() => toggleAdminStatus(admin)} />
-                  <button className="text-gray-300 hover:text-red-500 transition"><FiTrash2 /></button>
+                <div className="flex flex-col sm:flex-row gap-2 text-[11px] bg-slate-50 p-4 rounded-2xl text-slate-600 font-bold">
+                  <div className="flex items-center gap-2 flex-1"><FiPhone className="text-[#0b645b]" /> {admin.phone || "No phone"}</div>
+                  <div className="flex items-center gap-2 flex-1 truncate"><FiBriefcase className="text-[#0b645b]" /> {hospitals.find(h => h._id === admin.hospital_id)?.hospital_name || "Unassigned"}</div>
                 </div>
               </div>
             ))
           )}
         </div>
-
-        {/* Pagination Controls */}
         {totalPages > 1 && (
-          <div className="flex justify-center items-center gap-4 pt-8 border-t border-gray-100 mt-6">
-            <button disabled={currentPage === 1} onClick={() => setCurrentPage(1)} className="p-2 rounded-full hover:bg-gray-100 disabled:opacity-20"><FiChevronsLeft /></button>
-            <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} className="p-2 rounded-full hover:bg-gray-100 disabled:opacity-20"><FiChevronLeft /></button>
-            <span className="text-xs font-black text-gray-400 uppercase w-20 text-center">{currentPage} of {totalPages}</span>
-            <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)} className="p-2 rounded-full hover:bg-gray-100 disabled:opacity-20"><FiChevronRight /></button>
-            <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(totalPages)} className="p-2 rounded-full hover:bg-gray-100 disabled:opacity-20"><FiChevronsRight /></button>
+          <div className="flex justify-center items-center gap-2 pt-8">
+            <button disabled={page === 1} onClick={() => setPage(1)} className="p-2 rounded-full hover:bg-slate-100 disabled:opacity-20"><FiChevronsLeft /></button>
+            <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="p-2 rounded-full hover:bg-slate-100 disabled:opacity-20"><FiChevronLeft /></button>
+            <span className="text-[10px] w-16 text-center font-black text-slate-400 uppercase">{page} of {totalPages}</span>
+            <button disabled={page === totalPages} onClick={() => setPage(p => p + 1)} className="p-2 rounded-full hover:bg-slate-100 disabled:opacity-20"><FiChevronRight /></button>
+            <button disabled={page === totalPages} onClick={() => setPage(totalPages)} className="p-2 rounded-full hover:bg-slate-100 disabled:opacity-20"><FiChevronsRight /></button>
           </div>
         )}
       </div>
+    );
+  };
+
+  return (
+    <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-500 pb-10">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-xl sm:text-2xl font-black text-slate-900">Admin Management</h2>
+          <p className="text-xs sm:text-sm text-slate-500 font-medium">Oversee your administrator network.</p>
+        </div>
+        <button onClick={() => setShowForm(!showForm)} className="bg-[#0b645b] text-white p-4 rounded-2xl shadow-lg hover:bg-[#084e46] transition-transform active:scale-95">
+          {showForm ? <FiX size={20}/> : <FiPlus size={20}/>}
+        </button>
+      </div>
+
+      {showForm && (
+        <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-100 shadow-xl animate-in slide-in-from-top-4">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="bg-teal-50 p-3 rounded-2xl text-[#0b645b]"><FiShield size={20} /></div>
+            <h3 className="font-black text-slate-900 text-lg">Register New Administrator</h3>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <input placeholder="Admin Name" className="p-4 bg-slate-50 rounded-2xl text-sm font-bold border-2 border-transparent focus:border-[#0b645b] outline-none transition" value={newAdmin.name} onChange={(e) => setNewAdmin({ ...newAdmin, name: e.target.value })} />
+            <input placeholder="Email Address" className="p-4 bg-slate-50 rounded-2xl text-sm font-bold border-2 border-transparent focus:border-[#0b645b] outline-none transition" value={newAdmin.email} onChange={(e) => setNewAdmin({ ...newAdmin, email: e.target.value })} />
+            <input placeholder="Phone Number" className="p-4 bg-slate-50 rounded-2xl text-sm font-bold border-2 border-transparent focus:border-[#0b645b] outline-none transition" value={newAdmin.phone} onChange={(e) => setNewAdmin({ ...newAdmin, phone: e.target.value })} />
+            <input type="password" placeholder="Temporary Password" className="p-4 bg-slate-50 rounded-2xl text-sm font-bold border-2 border-transparent focus:border-[#0b645b] outline-none transition" value={newAdmin.password} onChange={(e) => setNewAdmin({ ...newAdmin, password: e.target.value })} />
+            
+            {/* Polished Dropdown Wrapper */}
+            <div className="col-span-1 sm:col-span-2 lg:col-span-4 relative group">
+              <select 
+                className="w-full p-4 bg-slate-50 rounded-2xl text-sm font-bold border-2 border-transparent focus:border-[#0b645b] outline-none transition appearance-none cursor-pointer group-hover:bg-slate-100" 
+                value={newAdmin.hospital_id} 
+                onChange={(e) => setNewAdmin({ ...newAdmin, hospital_id: e.target.value })}
+              >
+                <option value="" className="text-slate-400">Assign Hospital</option>
+                {hospitals.map(h => <option key={h._id} value={h._id} className="font-bold text-slate-900">{h.hospital_name}</option>)}
+              </select>
+              <FiChevronDown className="absolute right-5 top-5 text-slate-400 pointer-events-none transition-transform group-hover:text-[#0b645b]" size={18} />
+            </div>
+          </div>
+          <button onClick={handleAddAdmin} className="mt-6 w-full px-8 py-4 bg-[#0b645b] text-white rounded-2xl font-black text-sm hover:bg-[#084e46] transition-transform active:scale-95">Register Administrator</button>
+        </div>
+      )}
+
+      <div className="relative w-full">
+        <FiSearch className="absolute left-5 top-5 text-slate-400" size={18} />
+        <input 
+            placeholder="Search admins by name or email..." 
+            className="w-full pl-14 pr-12 py-5 bg-white rounded-3xl text-sm font-bold border border-slate-100 shadow-sm outline-none focus:border-[#0b645b] transition" 
+            value={searchQuery} 
+            onChange={(e) => {setSearchQuery(e.target.value); setActivePage(1); setInactivePage(1);}} 
+        />
+        {searchQuery && (
+          <button onClick={() => {setSearchQuery(""); setActivePage(1); setInactivePage(1);}} className="absolute right-5 top-5 text-slate-400 hover:text-slate-600">
+            <FiX size={20} />
+          </button>
+        )}
+      </div>
+
+      {renderAdminList(paginatedActive, activeAdmins, activePage, setActivePage, activeTotalPages)}
+      {renderAdminList(paginatedInactive, inactiveAdmins, inactivePage, setInactivePage, inactiveTotalPages, true)}
     </div>
   );
 }

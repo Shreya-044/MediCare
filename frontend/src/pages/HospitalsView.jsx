@@ -1,58 +1,65 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { 
-  FiTrash2, FiPlus, FiEdit2, FiSave, FiMapPin, FiPhone, FiMail, 
-  FiAlertCircle, FiX, FiSearch, FiChevronLeft, FiChevronRight, 
-  FiChevronsLeft, FiChevronsRight
+  FiPlus, FiEdit2, FiMapPin, FiX, FiSearch, FiChevronLeft, FiChevronRight, 
+  FiChevronsLeft, FiChevronsRight, FiBriefcase, FiHome, FiUser, FiPhone 
 } from 'react-icons/fi';
 import api from "../services/api";
 
-export default function HospitalsView({ hospitals = [], fetchHospitals, refreshActivities }) {
+export default function HospitalsView({ hospitals = [], admins = [], fetchHospitals, refreshActivities }) {
   const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [editValues, setEditValues] = useState({});
   const [searchQuery, setSearchQuery] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 4;
+  const [itemsPerPage, setItemsPerPage] = useState(4);
+  const [activePage, setActivePage] = useState(1);
+  const [inactivePage, setInactivePage] = useState(1);
 
   const [formData, setFormData] = useState({
     hospital_name: '', email: '', phone: '', emergency_phone: '',
     address: '', city: '', state: '', pincode: ''
   });
 
-  const filteredHospitals = useMemo(() => {
-    return hospitals.filter(h => 
-      h.hospital_name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [hospitals, searchQuery]);
+  // Map keys to user-friendly labels matching reference style
+  const fieldLabels = {
+    hospital_name: 'Hospital Name', email: 'Email Address', phone: 'Phone Number', 
+    emergency_phone: 'Emergency Phone', address: 'Address', city: 'City', 
+    state: 'State', pincode: 'Pincode'
+  };
 
-  const totalPages = Math.ceil(filteredHospitals.length / itemsPerPage);
-  const paginatedHospitals = filteredHospitals.slice(
-    (currentPage - 1) * itemsPerPage, 
-    currentPage * itemsPerPage
+  useEffect(() => {
+    const handleResize = () => setItemsPerPage(window.innerWidth < 640 ? 3 : 4);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const activeHospitals = useMemo(() => 
+    hospitals.filter(h => (h.status === 'active' || !h.status) && h.hospital_name.toLowerCase().includes(searchQuery.toLowerCase())), 
+    [hospitals, searchQuery]
   );
+
+  const inactiveHospitals = useMemo(() => 
+    hospitals.filter(h => h.status === 'inactive' && h.hospital_name.toLowerCase().includes(searchQuery.toLowerCase())), 
+    [hospitals, searchQuery]
+  );
+
   const toggleHospitalStatus = async (h) => {
     try {
       const newStatus = h.status === 'active' ? 'inactive' : 'active';
       await api.patch(`/super-admin/hospital/${h._id}/status`, { status: newStatus });
       await fetchHospitals();
       if (refreshActivities) refreshActivities();
-    } catch (err) {
-      console.error("Failed to toggle status:", err);
-    }
+    } catch (err) { console.error("Failed to toggle status:", err); }
   };
+
   const StatusToggle = ({ status, onToggle }) => (
-    <button onClick={onToggle} className={`relative flex items-center h-7 w-16 rounded-full transition-colors duration-300 ${status === 'active' ? 'bg-green-500' : 'bg-gray-300'}`}>
-      <div className={`absolute top-1 left-1 bg-white h-5 w-5 rounded-full shadow-md transition-transform duration-300 ${status === 'active' ? 'translate-x-9' : 'translate-x-0'}`} />
-      <span className={`text-[10px] font-black uppercase text-white ${status === 'active' ? 'ml-2' : 'ml-7'}`}>{status === 'active' ? 'On' : 'Off'}</span>
+    <button onClick={onToggle} className={`relative flex items-center h-7 w-14 rounded-full transition-all duration-300 ${status === 'active' ? 'bg-[#0b645b]' : 'bg-slate-200'}`}>
+      <div className={`absolute top-1 left-1 bg-white h-5 w-5 rounded-full shadow-sm transition-transform duration-300 ${status === 'active' ? 'translate-x-7' : 'translate-x-0'}`} />
     </button>
   );
 
   const saveHospital = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await api.post("/super-admin/add-hospital", formData, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await api.post("/super-admin/add-hospital", formData, { headers: { Authorization: `Bearer ${token}` } });
       if (response.data.success) {
         fetchHospitals();
         if (refreshActivities) refreshActivities(); 
@@ -61,152 +68,80 @@ export default function HospitalsView({ hospitals = [], fetchHospitals, refreshA
       }
     } catch (err) { console.log(err); }
   };
-  const startEdit = (h) => { setEditingId(h._id); setEditValues(h); };
-  const saveEdit = async (id) => {
-    try {
-      await api.put(`/super-admin/hospital/${id}`, editValues);
-      setEditingId(null);
-      await fetchHospitals();
-      if (refreshActivities) refreshActivities();
-    } catch (err) {
-      console.error("Failed to save edits:", err);
-    }
-  };
-
-  const EditField = ({ label, field }) => (
-    <div className="mb-2">
-      <label className="text-[9px] font-black text-gray-400 uppercase tracking-wider ml-1">{label}</label>
-      <input className="w-full border border-gray-200 p-1.5 rounded-lg text-xs outline-none focus:ring-1 focus:ring-[#0b645b]" value={editValues[field] || ''} onChange={e => setEditValues({ ...editValues, [field]: e.target.value })} />
-    </div>
-  );
-  const handleAddHospital = async (hospitalData) => {
-    try {
-      await api.post("/hospital/add", hospitalData);
-      await fetchHospitals();
-      if (refreshActivities) {
-        refreshActivities(); 
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-  const deleteHospital = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this hospital?")) return;
-    try {
-      await api.delete(`/super-admin/hospital/${id}`);
-      await fetchHospitals();
-      if (refreshActivities) refreshActivities(); // Add this
-    } catch (err) {
-      console.error("Failed to delete hospital:", err);
-    }
-  };
-  
 
   return (
-    <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm">
-      <div className="flex justify-between items-center mb-8">
+    <div className="space-y-8 animate-in fade-in duration-500 pb-10">
+      <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-black text-gray-900">Manage Hospitals</h2>
-          <p className="text-gray-500 text-sm">Comprehensive view of all hospital facility registrations.</p>
+          <h2 className="text-xl sm:text-2xl font-black text-slate-900">Hospital Management</h2>
+          <p className="text-xs sm:text-sm text-slate-500 font-medium">Oversee your entire hospital facility network.</p>
         </div>
-        
-        <div className="flex gap-4 items-center">
-          <div className="relative">
-            <FiSearch className="absolute left-3 top-3 text-gray-400" size={16} />
-            <input
-              placeholder="Search..."
-              className="pl-9 pr-4 py-3 bg-gray-50 rounded-xl text-sm font-bold outline-none border border-transparent focus:border-[#0b645b] transition w-64"
-              value={searchQuery}
-              onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-            />
-          </div>
-          <button onClick={() => setShowForm(!showForm)} className="bg-[#0b645b] text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 hover:bg-[#084d46] transition-all">
-            <FiPlus /> {showForm ? "Close" : "Add New Hospital"}
-          </button>
-        </div>
+        <button onClick={() => setShowForm(!showForm)} className="bg-[#0b645b] text-white p-4 rounded-2xl shadow-lg hover:bg-[#084e46] transition-transform active:scale-95">
+          {showForm ? <FiX size={20}/> : <FiPlus size={20}/>}
+        </button>
       </div>
 
       {showForm && (
-        <div className="mb-8 p-6 bg-gray-50 border border-gray-200 rounded-3xl animate-in slide-in-from-top-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {Object.keys(formData).map((key) => (
-              <div key={key}>
-                <label className="text-[10px] font-bold text-gray-500 uppercase ml-1">{key.replace('_', ' ')}</label>
-                <input value={formData[key]} className="w-full p-2.5 text-sm rounded-xl border border-gray-200 outline-none focus:ring-2 focus:ring-[#0b645b]" onChange={e => setFormData({ ...formData, [key]: e.target.value })} />
-              </div>
-            ))}
-            <button onClick={saveHospital} className="col-span-2 md:col-span-4 bg-[#0b645b] text-white py-3 rounded-xl font-bold hover:bg-[#084d46]">Save Hospital</button>
+        <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-100 shadow-xl animate-in slide-in-from-top-4">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="bg-teal-50 p-3 rounded-2xl text-[#0b645b]"><FiHome size={20} /></div>
+            <h3 className="font-black text-slate-900 text-lg">Register New Hospital</h3>
           </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {Object.keys(formData).map((key) => (
+              <input key={key} placeholder={fieldLabels[key]} className="p-4 bg-slate-50 rounded-2xl text-sm font-bold border-2 border-transparent focus:border-[#0b645b] outline-none transition" value={formData[key]} onChange={e => setFormData({ ...formData, [key]: e.target.value })} />
+            ))}
+          </div>
+          <button onClick={saveHospital} className="mt-6 w-full px-8 py-4 bg-[#0b645b] text-white rounded-2xl font-black text-sm hover:bg-[#084e46] transition-transform active:scale-95">Register Facility</button>
         </div>
       )}
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
-          <thead className="text-gray-400 uppercase text-[10px] tracking-widest font-black">
-            <tr><th className="pb-4">Hospital Details</th><th className="pb-4">Location & Logistics</th><th className="pb-4">Status</th><th className="pb-4 text-center">Actions</th></tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {paginatedHospitals.map(h => (
-              <tr key={h._id} className="hover:bg-gray-50/50">
-                <td className="py-6">
-                  {editingId === h._id ? <div className="w-64"><EditField label="Name" field="hospital_name" /><EditField label="Email" field="email" /><EditField label="Phone" field="phone" /><EditField label="Emergency" field="emergency_phone" /></div> : 
-                  <div><p className="font-black text-gray-900">{h.hospital_name}</p><div className="flex items-center gap-2 text-xs text-gray-500 mt-1"><FiMail size={12} />{h.email}</div><div className="flex items-center gap-2 text-xs text-gray-500 mt-1"><FiPhone size={12} />{h.phone}</div></div>}
-                </td>
-                <td className="py-6 text-xs text-gray-600">
-                  {editingId === h._id ? <div className="w-64"><EditField label="Address" field="address" /><EditField label="City" field="city" /><EditField label="State" field="state" /><EditField label="Pincode" field="pincode" /></div> : 
-                  <div className="space-y-1"><p className="flex items-center gap-2"><FiMapPin size={12} />{h.address}, {h.city}</p><p className="text-[10px] uppercase font-bold text-gray-400">Pincode: {h.pincode} | State: {h.state}</p><p className="flex items-center gap-2 text-red-500"><FiAlertCircle size={12} /> {h.emergency_phone}</p></div>}
-                </td>
-                <td className="py-6"><StatusToggle status={h.status} onToggle={() => {}} /></td>
-                <td className="py-6 text-center">{editingId === h._id ? <div className="flex gap-2 justify-center"><button onClick={() => saveEdit(h._id)} className="bg-green-600 text-white p-2 rounded-lg"><FiSave size={16} /></button><button onClick={() => setEditingId(null)} className="bg-gray-200 text-gray-600 p-2 rounded-lg"><FiX size={16} /></button></div> : <div className="flex justify-center gap-2"><button onClick={() => startEdit(h)} className="text-blue-500 p-2"><FiEdit2 size={16} /></button><button className="text-red-500 p-2"><FiTrash2 size={16} /></button></div>}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="relative w-full">
+        <FiSearch className="absolute left-5 top-5 text-slate-400" size={18} />
+        <input placeholder="Search hospitals by name..." className="w-full pl-14 pr-12 py-5 bg-white rounded-3xl text-sm font-bold border border-slate-100 shadow-sm outline-none focus:border-[#0b645b] transition" value={searchQuery} onChange={(e) => {setSearchQuery(e.target.value); setActivePage(1);}} />
+        {searchQuery && <button onClick={() => setSearchQuery("")} className="absolute right-5 top-5 text-slate-400 hover:text-slate-600"><FiX size={20} /></button>}
       </div>
 
-      {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-4 pt-8 border-t border-gray-100">
-          {/* First Page */}
-          <button 
-            disabled={currentPage === 1} 
-            onClick={() => setCurrentPage(1)} 
-            className="p-2 rounded-full hover:bg-gray-100 disabled:opacity-20"
-          >
-            <FiChevronsLeft />
-          </button>
-
-          {/* Previous Page */}
-          <button 
-            disabled={currentPage === 1} 
-            onClick={() => setCurrentPage(p => p - 1)} 
-            className="p-2 rounded-full hover:bg-gray-100 disabled:opacity-20"
-          >
-            <FiChevronLeft />
-          </button>
-          
-          <span className="text-xs font-black text-gray-400 uppercase tracking-widest w-20 text-center">
-            {currentPage} of {totalPages}
-          </span>
-          
-          {/* Next Page */}
-          <button 
-            disabled={currentPage === totalPages} 
-            onClick={() => setCurrentPage(p => p + 1)} 
-            className="p-2 rounded-full hover:bg-gray-100 disabled:opacity-20"
-          >
-            <FiChevronRight />
-          </button>
-
-          {/* Last Page */}
-          <button 
-            disabled={currentPage === totalPages} 
-            onClick={() => setCurrentPage(totalPages)} 
-            className="p-2 rounded-full hover:bg-gray-100 disabled:opacity-20"
-          >
-            <FiChevronsRight />
-          </button>
+      {[ { list: activeHospitals.slice((activePage - 1) * itemsPerPage, activePage * itemsPerPage), fullList: activeHospitals, page: activePage, setPage: setActivePage, total: Math.ceil(activeHospitals.length / itemsPerPage) || 1, title: "Active Hospitals" },
+         { list: inactiveHospitals.slice((inactivePage - 1) * itemsPerPage, inactivePage * itemsPerPage), fullList: inactiveHospitals, page: inactivePage, setPage: setInactivePage, total: Math.ceil(inactiveHospitals.length / itemsPerPage) || 1, title: "Inactive Hospitals" } ].map((sec, i) => (
+        <div key={i} className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-100 shadow-sm">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-base font-black text-slate-800">{sec.title}</h2>
+            <span className="text-[10px] font-bold bg-slate-50 border border-slate-100 px-3 py-1 rounded-full text-slate-500">{sec.fullList.length} Records</span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {sec.list.length === 0 ? <p className="col-span-full text-center py-10 text-slate-400 font-bold text-sm bg-slate-50 rounded-2xl">No {sec.title.toLowerCase()} found.</p> :
+              sec.list.map(h => {
+                const admin = admins.find(a => a.hospital_id === h._id);
+                return (
+                <div key={h._id} className="group flex flex-col p-5 bg-white border border-slate-100 shadow-sm rounded-3xl gap-4 hover:border-[#0b645b]/20 transition-all">
+                  <div className="flex items-center gap-4">
+                      <div className="bg-teal-50 p-4 rounded-2xl text-[#0b645b] shrink-0"><FiBriefcase size={20} /></div>
+                      <div className="min-w-0 flex-1">
+                          <p className="text-sm font-black text-slate-900 truncate">{h.hospital_name}</p>
+                          <p className="text-[10px] text-slate-400 uppercase tracking-wider truncate">{h.email}</p>
+                      </div>
+                      <StatusToggle status={h.status || 'active'} onToggle={() => toggleHospitalStatus(h)} />
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-2 text-[11px] bg-slate-50 p-4 rounded-2xl text-slate-600 font-bold">
+                    <div className="flex items-center gap-2 flex-1 truncate"><FiMapPin className="text-[#0b645b]" /> {h.city}, {h.state}</div>
+                    <div className="flex items-center gap-2 flex-1"><FiPhone className="text-[#0b645b]" /> {h.phone}</div>
+                    <div className="flex items-center gap-2 flex-1 truncate"><FiUser className="text-[#0b645b]" /> {admin ? admin.name : "Not Assigned"}</div>
+                  </div>
+                </div>
+              )})}
+          </div>
+          {sec.total > 1 && (
+            <div className="flex justify-center items-center gap-2 pt-8">
+              <button disabled={sec.page === 1} onClick={() => sec.setPage(1)} className="p-2 rounded-full hover:bg-slate-100 disabled:opacity-20"><FiChevronsLeft /></button>
+              <button disabled={sec.page === 1} onClick={() => sec.setPage(p => p - 1)} className="p-2 rounded-full hover:bg-slate-100 disabled:opacity-20"><FiChevronLeft /></button>
+              <span className="text-[10px] w-16 text-center font-black text-slate-400 uppercase">{sec.page} of {sec.total}</span>
+              <button disabled={sec.page === sec.total} onClick={() => sec.setPage(p => p + 1)} className="p-2 rounded-full hover:bg-slate-100 disabled:opacity-20"><FiChevronRight /></button>
+              <button disabled={sec.page === sec.total} onClick={() => sec.setPage(sec.total)} className="p-2 rounded-full hover:bg-slate-100 disabled:opacity-20"><FiChevronsRight /></button>
+            </div>
+          )}
         </div>
-      )}
+      ))}
     </div>
   );
 }
