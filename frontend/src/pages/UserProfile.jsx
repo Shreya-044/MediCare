@@ -12,28 +12,136 @@ import {
   FiDollarSign,
   FiClock,
   FiActivity,
-  FiX
+  FiX,
+  FiCamera
 } from "react-icons/fi";
 
 export default function UserProfile() {
   const [currentUser, setCurrentUser] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [hospital, setHospital] = useState(null);
+const [hospitalImage, setHospitalImage] = useState(null);
+const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   const [profile, setProfile] = useState({});
 
   useEffect(() => {
-    const storedUser = JSON.parse(localStorage.getItem("user"));
+
+  const loadProfile = async () => {
+
+    const storedUser = JSON.parse(
+      localStorage.getItem("user")
+    );
 
     if (!storedUser) return;
 
-    setCurrentUser(storedUser);
 
-    setProfile({
+    const userId =
+      storedUser._id ||
+      storedUser.id;
+
+
+    setCurrentUser({
       ...storedUser,
-      _id: storedUser._id || storedUser.id
+      _id: userId
     });
-  }, []);
+
+
+    try {
+
+      let response;
+
+
+      if (storedUser.role === "doctor") {
+
+  response = await api.get(
+    `/admin/doctor/${userId}`
+  );
+
+}
+
+else if (storedUser.role === "staff") {
+
+  response = await api.get(
+    `/admin/staff/${userId}`
+  );
+
+}
+
+else if (storedUser.role === "admin") {
+
+  response = await api.get(
+    "/admin/hospital/profile"
+  );
+
+  const hospitalData = response.data.data;
+
+  setHospital(hospitalData);
+
+  const adminProfile = {
+    ...storedUser,
+    _id: userId,
+    hospital: hospitalData
+  };
+
+  setCurrentUser(adminProfile);
+  setProfile(adminProfile);
+
+  return;
+
+}
+
+      const databaseProfile =
+        response.data.data;
+
+
+      const completeProfile = {
+
+        ...storedUser,
+
+        ...databaseProfile,
+
+        _id: userId
+
+      };
+
+
+      setCurrentUser(completeProfile);
+
+      setProfile(completeProfile);
+
+
+      // Keep localStorage synchronized
+      localStorage.setItem(
+        "user",
+        JSON.stringify(completeProfile)
+      );
+
+
+    }
+
+    catch (error) {
+
+      console.error(
+        "Failed to load profile:",
+        error
+      );
+
+      // Fallback to localStorage
+      setProfile({
+        ...storedUser,
+        _id: userId
+      });
+
+    }
+
+  };
+
+
+  loadProfile();
+
+}, []);
 
   const role = currentUser?.role;
 
@@ -151,100 +259,198 @@ export default function UserProfile() {
   };
 
   const handleSave = async () => {
-    try {
-      setIsSaving(true);
 
-      const id = profile._id || profile.id;
+  try {
 
-      if (!id) {
-        alert("User ID not found.");
-        return;
-      }
+    setIsSaving(true);
 
-      let endpoint = "";
+    // ADMIN
+    if (role === "admin") {
 
-      if (role === "doctor") {
-        endpoint = `/admin/update-doctor/${id}`;
-      } else if (role === "staff") {
-        endpoint = `/admin/update-staff/${id}`;
-      } else {
-        alert("Profile update is not available for this role.");
-        return;
-      }
+      if (hospitalImage) {
 
-      /*
-      ------------------------------------
-      SEND ONLY BACKEND-ALLOWED FIELDS
-      ------------------------------------
-      */
+        const formData = new FormData();
 
-      let updateData = {};
-
-      if (role === "doctor") {
-        updateData = {
-          name: profile.name,
-          email: profile.email,
-          department: profile.department,
-          designation: profile.designation,
-          consultation_fee: Number(profile.consultation_fee),
-          experience: Number(profile.experience),
-          available_slots: profile.available_slots
-        };
-      }
-
-      if (role === "staff") {
-        updateData = {
-          name: profile.name,
-          email: profile.email,
-          designation: profile.designation
-        };
-      }
-
-      const response = await api.put(endpoint, updateData);
-
-      if (response.data.success) {
-        alert(response.data.message || "Profile updated successfully.");
-
-        /*
-        Update localStorage with new profile values
-        */
-
-        const updatedUser = {
-          ...currentUser,
-          ...profile,
-          _id: id
-        };
-
-        localStorage.setItem(
-          "user",
-          JSON.stringify(updatedUser)
+        formData.append(
+          "image",
+          hospitalImage
         );
 
-        setCurrentUser(updatedUser);
-        setProfile(updatedUser);
-        setIsEditing(false);
+        const response = await api.put(
+          "/admin/hospital/image",
+          formData,
+          {
+            headers: {
+              "Content-Type":
+                "multipart/form-data"
+            }
+          }
+        );
+
+        if (response.data.success) {
+
+          setHospital((prev) => ({
+            ...prev,
+            image_url:
+              response.data.image_url
+          }));
+
+          alert(
+            "Hospital image updated successfully."
+          );
+
+        }
+
       }
 
-    } catch (error) {
-      console.error("Profile update error:", error);
+      setHospitalImage(null);
 
-      alert(
-        error.response?.data?.message ||
-        "Profile update failed."
+      setIsEditing(false);
+
+      return;
+
+    }
+
+    // DOCTOR / STAFF
+
+    const id =
+      profile._id ||
+      profile.id;
+
+    if (!id) {
+      alert("User ID not found.");
+      return;
+    }
+
+    let endpoint = "";
+
+    if (role === "doctor") {
+
+      endpoint =
+        `/admin/update-doctor/${id}`;
+
+    }
+
+    else if (role === "staff") {
+
+      endpoint =
+        `/admin/update-staff/${id}`;
+
+    }
+
+    let updateData = {};
+
+    if (role === "doctor") {
+
+      updateData = {
+
+        name: profile.name,
+
+        email: profile.email,
+
+        department:
+          profile.department,
+
+        designation:
+          profile.designation,
+
+        consultation_fee:
+          Number(
+            profile.consultation_fee
+          ),
+
+        experience:
+          Number(
+            profile.experience
+          ),
+
+        available_slots:
+          profile.available_slots
+
+      };
+
+    }
+
+    if (role === "staff") {
+
+      updateData = {
+
+        name: profile.name,
+
+        email: profile.email,
+
+        designation:
+          profile.designation
+
+      };
+
+    }
+
+    const response =
+      await api.put(
+        endpoint,
+        updateData
       );
 
-    } finally {
-      setIsSaving(false);
-    }
-  };
+    if (response.data.success) {
 
-  if (!currentUser) {
-    return (
-      <div className="p-10 text-center">
-        Loading profile...
-      </div>
-    );
+      alert(
+        response.data.message ||
+        "Profile updated successfully."
+      );
+
+      const updatedUser = {
+
+        ...currentUser,
+
+        ...profile,
+
+        _id: id
+
+      };
+
+      localStorage.setItem(
+        "user",
+        JSON.stringify(
+          updatedUser
+        )
+      );
+
+      setCurrentUser(
+        updatedUser
+      );
+
+      setProfile(
+        updatedUser
+      );
+
+      setIsEditing(false);
+
+    }
+
   }
+
+  catch (error) {
+
+    console.error(
+      "Profile update error:",
+      error
+    );
+
+    alert(
+      error.response?.data?.message ||
+      "Profile update failed."
+    );
+
+  }
+
+  finally {
+
+    setIsSaving(false);
+
+  }
+
+};
 
   return (
     <div className="max-w-3xl mx-auto px-10 py-10 animate-in fade-in duration-300">
@@ -304,6 +510,69 @@ export default function UserProfile() {
       {/* PROFILE CARD */}
 
       <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm space-y-4">
+        {/* HOSPITAL IMAGE */}
+
+{role === "admin" && (
+
+  <div className="p-5 bg-gray-50 rounded-2xl">
+
+    <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider mb-3">
+      Hospital Image
+    </p>
+
+    <div className="flex items-center gap-5">
+
+      <div className="w-28 h-28 rounded-2xl overflow-hidden bg-gray-200 flex items-center justify-center">
+
+        {hospital?.image_url ? (
+
+          <img
+            src={hospital.image_url}
+            alt={hospital.hospital_name}
+            className="w-full h-full object-cover"
+          />
+
+        ) : (
+
+          <FiCamera
+            size={30}
+            className="text-gray-400"
+          />
+
+        )}
+
+      </div>
+
+      {isEditing && (
+
+        <div>
+
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => {
+
+              setHospitalImage(
+                e.target.files[0]
+              );
+
+            }}
+            className="text-xs"
+          />
+
+          <p className="text-xs text-gray-400 mt-2">
+            Upload your hospital logo or image
+          </p>
+
+        </div>
+
+      )}
+
+    </div>
+
+  </div>
+
+)}
 
         {/* ROLE */}
 

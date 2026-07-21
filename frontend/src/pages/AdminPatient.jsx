@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { FiUploadCloud, FiUser, FiCalendar } from 'react-icons/fi';
 import api from "../services/api";
 
@@ -30,31 +30,47 @@ export default function AdminPatient() {
 
   // Fetch appointments whenever the target date changes
   useEffect(() => {
-    fetchAppointmentsByDate(selectedDate);
-  }, [selectedDate]);
+  fetchAppointmentsByDate(selectedDate, selectedDoctorId);
+}, [selectedDate, selectedDoctorId]);
 
-  const fetchAppointmentsByDate = async (date) => {
-    setLoading(true);
-    try {
-      const token = localStorage.getItem("token");
-      const response = await api.get(`/admin/patients/appointments?date=${date}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (response.data.success) {
-        setAppointments(response.data.data);
-      }
-    } catch (err) {
-      console.error("Error fetching patient appointments", err);
-    } finally {
-      setLoading(false);
+ const fetchAppointmentsByDate = async (date, doctorId) => {
+
+  setLoading(true);
+
+  try {
+
+    const token = localStorage.getItem("token");
+
+    let url = `/admin/patients/appointments?date=${date}`;
+
+    if (doctorId) {
+      url += `&doctor_id=${doctorId}`;
     }
-  };
 
-  // Client-side filtering by Doctor ID based on the selection menu
-  const filteredAppointments = useMemo(() => {
-    if (!selectedDoctorId) return appointments;
-    return appointments.filter(appt => appt.doctorId === selectedDoctorId);
-  }, [appointments, selectedDoctorId]);
+    const response = await api.get(url, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    if (response.data.success) {
+      setAppointments(response.data.data);
+    }
+
+  } catch (err) {
+
+    console.error(
+      "Error fetching patient appointments",
+      err
+    );
+
+  } finally {
+
+    setLoading(false);
+
+  }
+
+};
 
   const handleFileUpload = async (patientId, doctorId) => {
     const file = reportFiles[patientId];
@@ -132,7 +148,7 @@ export default function AdminPatient() {
       <div className="grid grid-cols-1 gap-4">
         {loading ? (
           <div className="text-center py-20 text-gray-400 font-bold">Loading schedule listings...</div>
-        ) : filteredAppointments.map((p) => (
+        ) : appointments.map((p) => (
           <div key={p._id} className="p-6 border border-gray-100 rounded-2xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 hover:border-[#0b645b] transition-all duration-300">
             
             <div className="flex items-center gap-4">
@@ -167,7 +183,7 @@ export default function AdminPatient() {
           </div>
         ))}
         
-        {!loading && filteredAppointments.length === 0 && (
+        {!loading && appointments.length === 0 && (
           <div className="text-center py-20 bg-gray-50/50 rounded-2xl border border-dashed border-gray-200 text-gray-400 font-bold">
             No matching patient appointments found for this filter criteria.
           </div>

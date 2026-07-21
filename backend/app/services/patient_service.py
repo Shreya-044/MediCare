@@ -267,48 +267,149 @@ def get_patient_appointments(patient_id):
         "$or": [
             {"patient_id": ObjectId(patient_id)},
             {"patient_id": patient_id}
-            ]
-        })
+        ]
+    })
 
     for appointment in results:
 
+        # Safely get doctor ID
+        doctor_id = appointment.get("doctor_id")
+
+        if not doctor_id:
+            continue
+
+        # Convert doctor_id to ObjectId if necessary
+        try:
+
+            if isinstance(doctor_id, str):
+                doctor_id = ObjectId(doctor_id)
+
+        except Exception:
+
+            print(
+                f"Invalid doctor_id in appointment: {doctor_id}"
+            )
+
+            continue
+
+
         doctor = doctors.find_one({
-            "_id": ObjectId(appointment["doctor_id"])
+            "_id": doctor_id
         })
 
+
+        # Doctor may have been deleted
+        if not doctor:
+
+            print(
+                f"Doctor not found for appointment: {appointment['_id']}"
+            )
+
+            continue
+
+
+        hospital_id = doctor.get("hospital_id")
+
+
+        # Doctor has no hospital assigned
+        if not hospital_id:
+
+            print(
+                f"Hospital ID missing for doctor: {doctor['_id']}"
+            )
+
+            continue
+
+
+        try:
+
+            if isinstance(hospital_id, str):
+                hospital_id = ObjectId(hospital_id)
+
+        except Exception:
+
+            print(
+                f"Invalid hospital_id: {hospital_id}"
+            )
+
+            continue
+
+
         hospital = hospitals.find_one({
-            "_id": ObjectId(doctor["hospital_id"])
+            "_id": hospital_id
         })
+
+
+        if not hospital:
+
+            print(
+                f"Hospital not found for doctor: {doctor['_id']}"
+            )
+
+            continue
+
 
         appointment_list.append({
 
-    "_id": str(appointment["_id"]),
+            "_id": str(appointment["_id"]),
 
-    "doctor_name": doctor["name"],
+            "doctor_name": doctor.get(
+                "name",
+                "Unknown Doctor"
+            ),
 
-    "department": doctor["department"],
+            "department": doctor.get(
+                "department",
+                "Not specified"
+            ),
 
-    "hospital_name": hospital["hospital_name"],
+            "hospital_name": hospital.get(
+                "hospital_name",
+                "Unknown Hospital"
+            ),
 
-    "appointment_date": appointment["appointment_date"],
+            "appointment_date": appointment.get(
+                "appointment_date"
+            ),
 
-    "appointment_time": appointment["appointment_time"],
+            "appointment_time": appointment.get(
+                "appointment_time"
+            ),
 
-    "appointment_status": appointment["appointment_status"],
+            "appointment_status": appointment.get(
+                "appointment_status"
+            ),
 
-    "consultation_fee": appointment["consultation_fee"],
+            "consultation_fee": appointment.get(
+                "consultation_fee",
+                0
+            ),
 
-    "platform_fee": appointment["platform_fee"],
+            "platform_fee": appointment.get(
+                "platform_fee",
+                0
+            ),
 
-    "gst": appointment["gst"],
+            "gst": appointment.get(
+                "gst",
+                0
+            ),
 
-    "total_amount": appointment["total_amount"],
+            "total_amount": appointment.get(
+                "total_amount",
+                0
+            ),
 
-    "patientsAhead": appointment.get("patients_ahead"),
+            "patientsAhead": appointment.get(
+                "patients_ahead"
+            ),
 
-    "expectedWait": appointment.get("expected_wait")
+            "expectedWait": appointment.get(
+                "expected_wait"
+            )
 
-})
+        })
+
 
     return {
 
@@ -316,4 +417,4 @@ def get_patient_appointments(patient_id):
 
         "data": appointment_list
 
-    },200
+    }, 200

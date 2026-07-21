@@ -2,7 +2,13 @@ from flask import Blueprint, request, jsonify, g
 
 from app.middleware.jwt_required import jwt_required
 from app.middleware.role_required import role_required
-from app.services.admin_service import get_dashboard_stats
+from app.utils.cloudinary_config import upload_to_cloudinary
+from app.services.admin_service import (
+    get_dashboard_stats,
+    get_hospital_patient_appointments,
+    get_hospital_profile,
+    update_hospital_image
+)
 
 from app.services.staff_service import (
     create_staff,
@@ -63,8 +69,31 @@ def doctors():
 
 @admin_bp.route("/doctor/<doctor_id>", methods=["GET"])
 @jwt_required
-@role_required("admin")
 def doctor(doctor_id):
+
+    current_role = g.current_user["role"]
+
+    # Admin and doctor can access this endpoint
+    if current_role not in ["admin", "doctor"]:
+        return jsonify({
+            "success": False,
+            "message": "Access denied."
+        }), 403
+
+    # Doctor can view only their own profile
+    if current_role == "doctor":
+
+        current_user_id = str(
+            g.current_user.get("_id") or
+            g.current_user.get("id") or
+            g.current_user.get("user_id")
+        )
+
+        if current_user_id != str(doctor_id):
+            return jsonify({
+                "success": False,
+                "message": "You can view only your own profile."
+            }), 403
 
     hospital_id = g.current_user["hospital_id"]
 
@@ -177,8 +206,31 @@ def staff():
 
 @admin_bp.route("/staff/<staff_id>", methods=["GET"])
 @jwt_required
-@role_required("admin")
 def get_staff(staff_id):
+
+    current_role = g.current_user["role"]
+
+    # Admin and staff can access this endpoint
+    if current_role not in ["admin", "staff"]:
+        return jsonify({
+            "success": False,
+            "message": "Access denied."
+        }), 403
+
+    # Staff can view only their own profile
+    if current_role == "staff":
+
+        current_user_id = str(
+            g.current_user.get("_id") or
+            g.current_user.get("id") or
+            g.current_user.get("user_id")
+        )
+
+        if current_user_id != str(staff_id):
+            return jsonify({
+                "success": False,
+                "message": "You can view only your own profile."
+            }), 403
 
     hospital_id = g.current_user["hospital_id"]
 
@@ -241,5 +293,70 @@ def dashboard_stats():
     hospital_id = g.current_user["hospital_id"]
 
     response, status = get_dashboard_stats(hospital_id)
+
+    return jsonify(response), status
+
+@admin_bp.route("/patients/appointments", methods=["GET"])
+@jwt_required
+@role_required("admin")
+def hospital_patient_appointments():
+
+    hospital_id = g.current_user["hospital_id"]
+
+    date = request.args.get("date")
+    doctor_id = request.args.get("doctor_id")
+
+    response, status = get_hospital_patient_appointments(
+        hospital_id=hospital_id,
+        date=date,
+        doctor_id=doctor_id
+    )
+
+    return jsonify(response), status
+
+@admin_bp.route("/hospital/profile", methods=["GET"])
+@jwt_required
+@role_required("admin")
+def hospital_profile():
+
+    hospital_id = g.current_user["hospital_id"]
+
+    response, status = get_hospital_profile(
+        hospital_id
+    )
+
+    return jsonify(response), status
+
+@admin_bp.route("/hospital/image", methods=["PUT"])
+@jwt_required
+@role_required("admin")
+def upload_hospital_image():
+
+    hospital_id = g.current_user["hospital_id"]
+
+    if "image" not in request.files:
+
+        return jsonify({
+            "success": False,
+            "message": "Hospital image is required."
+        }), 400
+
+    image = request.files["image"]
+
+    if image.filename == "":
+
+        return jsonify({
+            "success": False,
+            "message": "No image selected."
+        }), 400
+
+    # Temporary example:
+    # Here you upload image to Cloudinary
+    image_url = upload_to_cloudinary(image)
+
+    response, status = update_hospital_image(
+        hospital_id,
+        image_url
+    )
 
     return jsonify(response), status
