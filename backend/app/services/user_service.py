@@ -1,7 +1,5 @@
 from datetime import datetime, timezone
-
 from bson import ObjectId
-
 from app.database import db
 from app.utils.password import hash_password
 
@@ -35,6 +33,7 @@ def create_admin(data):
     admin = {
         "name": data["name"],
         "email": data["email"],
+        "phone": data.get("phone", ""),
         "password": hash_password(data["password"]),
         "role": "admin",
         "hospital_id": data["hospital_id"],
@@ -61,6 +60,7 @@ def get_all_admins():
         {
             "name": 1,
             "email": 1,
+            "phone": 1,
             "role": 1,
             "hospital_id": 1,
             "status": 1,
@@ -131,6 +131,7 @@ def update_admin(admin_id, data):
         allowed_fields = [
             "name",
             "email",
+            "phone",
             "status"
         ]
 
@@ -219,3 +220,50 @@ def delete_admin(admin_id):
             "success": False,
             "message": "Invalid Admin ID."
         }, 400
+
+def update_admin_status(admin_id, status):
+
+    users = db["users"]
+
+    try:
+
+        admin = users.find_one({
+            "_id": ObjectId(admin_id),
+            "role": "admin"
+        })
+
+        if not admin:
+            return {
+                "success": False,
+                "message": "Admin not found."
+            }, 404
+
+        if status not in ["active", "inactive"]:
+            return {
+                "success": False,
+                "message": "Invalid status."
+            }, 400
+
+        users.update_one(
+            {
+                "_id": ObjectId(admin_id)
+            },
+            {
+                "$set": {
+                    "status": status
+                }
+            }
+        )
+
+        return {
+            "success": True,
+            "message": f"Admin marked as {status}"
+        }, 200
+
+    except Exception:
+
+        return {
+            "success": False,
+            "message": "Invalid Admin ID."
+        }, 400
+    

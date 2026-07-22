@@ -85,7 +85,7 @@ def update_hospital(hospital_id, data):
             "city",
             "state",
             "pincode",
-            "subscription"
+            "emergency_phone"
         ]
 
         update_data = {}
@@ -151,6 +151,48 @@ def delete_hospital(hospital_id):
 
     except Exception:
 
+        return {
+            "success": False,
+            "message": "Invalid Hospital ID."
+        }, 400
+
+def update_hospital_status(hospital_id, status):
+
+    hospitals = db["hospitals"]
+
+    try:
+        hospital = hospitals.find_one({
+            "_id": ObjectId(hospital_id)
+        })
+
+        if not hospital:
+            return {
+                "success": False,
+                "message": "Hospital not found."
+            }, 404
+
+        if status not in ["active", "inactive"]:
+            return {
+                "success": False,
+                "message": "Invalid status."
+            }, 400
+
+        hospitals.update_one(
+            {"_id": ObjectId(hospital_id)},
+            {
+                "$set": {
+                    "status": status
+                }
+            }
+        )
+
+        return {
+            "success": True,
+            "message": f"Hospital marked as {status}.",
+            "status": status
+        }, 200
+
+    except Exception:
         return {
             "success": False,
             "message": "Invalid Hospital ID."

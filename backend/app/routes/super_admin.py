@@ -1,15 +1,24 @@
 from flask import Blueprint, request, jsonify, g
-
+from bson import ObjectId
+from app.database import db
 from app.middleware.jwt_required import jwt_required
 from app.middleware.role_required import role_required
-from app.services.super_admin_service import get_dashboard_stats
+from app.services.activity_service import (
+    get_recent_activities,
+    create_activity
+)
+from app.services.super_admin_service import (
+    get_dashboard_stats,
+    get_super_dashboard_stats
+)
 
 from app.services.user_service import (
     create_admin,
     get_all_admins,
     get_admin_by_id,
     update_admin,
-    delete_admin
+    delete_admin,
+    update_admin_status
 )
 
 from app.services.hospital_service import (
@@ -17,7 +26,8 @@ from app.services.hospital_service import (
     get_all_hospitals,
     get_hospital_by_id,
     update_hospital,
-    delete_hospital
+    delete_hospital,
+    update_hospital_status
 )
 
 super_admin_bp = Blueprint("super_admin", __name__)
@@ -48,7 +58,11 @@ def add_hospital():
             }), 400
 
     response, status = create_hospital(data)
-
+    if status == 201:
+        create_activity(
+            f"Added new Hospital: {data['hospital_name']}",
+            "HOSPITAL_ADDED"
+        )
     return jsonify(response), status
 
 @super_admin_bp.route("/hospitals", methods=["GET"])
@@ -92,7 +106,11 @@ def update_hospital_route(hospital_id):
 def delete_hospital_route(hospital_id):
 
     response, status = delete_hospital(hospital_id)
-
+    if status == 200:
+        create_activity(
+            f"Deleted or Updated Hospital ID: {hospital_id}",
+            "HOSPITAL_DELETED"
+        )
     return jsonify(response), status
 
 @super_admin_bp.route("/add-admin", methods=["POST"])
@@ -117,7 +135,11 @@ def add_admin():
             }), 400
 
     response, status = create_admin(data)
-
+    if status == 201:
+        create_activity(
+            f"Registered new Admin: {data['name']}",
+            "ADMIN_REGISTERED"
+        )
     return jsonify(response), status
 
 @super_admin_bp.route("/admins", methods=["GET"])
@@ -183,16 +205,17 @@ def update_admin_route(admin_id):
 @role_required("super_admin")
 def delete_admin_route(admin_id):
 
+    admin = db["users"].find_one({
+        "_id": ObjectId(admin_id)
+    })
+
     response, status = delete_admin(admin_id)
 
-    return jsonify(response), status
-
-@super_admin_bp.route("/dashboard-stats", methods=["GET"])
-@jwt_required
-@role_required("super_admin")
-def dashboard_stats():
-
-    response, status = get_dashboard_stats()
+    if status == 200 and admin:
+        create_activity(
+            f"Deleted or Updated Admin: {admin.get('name')}",
+            "ADMIN_DELETED"
+        )
 
     return jsonify(response), status
 
@@ -214,5 +237,82 @@ def update_super_admin_profile(admin_id):
         admin_id,
         data
     )
+
+    return jsonify(response), status
+
+@super_admin_bp.route("/dashboard-revenue", methods=["GET"])
+@jwt_required
+@role_required("super_admin")
+def dashboard_stats():
+
+    response, status = get_super_dashboard_stats()
+
+    return jsonify(response), status
+
+@super_admin_bp.route("/recent-activities", methods=["GET"])
+@jwt_required
+@role_required("super_admin")
+def recent_activities():
+
+    response, status = get_recent_activities()
+
+    return jsonify(response), status
+
+@super_admin_bp.route("/hospital/<hospital_id>/status", methods=["PATCH"])
+@jwt_required
+@role_required("super_admin")
+def change_hospital_status(hospital_id):
+
+    data = request.get_json()
+
+    if not data or "status" not in data:
+        return jsonify({
+            "success": False,
+            "message": "Status is required."
+        }), 400
+
+    hospital = db["hospitals"].find_one({
+    "_id": ObjectId(hospital_id)
+})
+
+    response, status = update_hospital_status(
+        hospital_id,
+        data["status"]
+    )
+
+    if status == 200 and hospital:
+        create_activity(
+            f"Hospital '{hospital['hospital_name']}' status changed to {data['status']}",
+            "HOSPITAL_STATUS_UPDATED"
+        )
+    return jsonify(response), status
+
+@super_admin_bp.route("/admin/<admin_id>/status", methods=["PATCH"])
+@jwt_required
+@role_required("super_admin")
+def change_admin_status(admin_id):
+
+    data = request.get_json()
+
+    if not data or "status" not in data:
+        return jsonify({
+            "success": False,
+            "message": "Status is required."
+        }), 400
+
+    admin = db["users"].find_one({
+        "_id": ObjectId(admin_id)
+    })
+
+    response, status = update_admin_status(
+        admin_id,
+        data["status"]
+    )
+
+    if status == 200 and admin:
+        create_activity(
+            f"Admin '{admin['name']}' status changed to {data['status']}",
+            "ADMIN_STATUS_UPDATED"
+        )
 
     return jsonify(response), status

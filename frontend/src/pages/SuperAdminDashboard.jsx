@@ -27,7 +27,7 @@ export default function SuperAdminDashboard({
 
   const fetchDashboardStats = async () => {
     try {
-      const response = await api.get("/super-admin/dashboard-stats");
+      const response = await api.get("/super-admin/dashboard-revenue");
       setStats(response.data.data);
     } catch (error) {
       console.error(error);
@@ -35,20 +35,27 @@ export default function SuperAdminDashboard({
   };
 
   const fetchRecentActivities = async () => {
-    // Providing mock data if API call fails or for demonstration
-    const mockActivities = [
-      { description: "Added new Hospital: City General", type: "HOSPITAL_ADDED", timestamp: new Date().toISOString() },
-      { description: "Registered new Admin: Sarah Jenkins", type: "ADMIN_REGISTERED", timestamp: new Date(Date.now() - 3600000).toISOString() },
-      { description: "Hospital 'St. Jude' deleted", type: "HOSPITAL_DELETED", timestamp: new Date(Date.now() - 7200000).toISOString() }
-    ];
 
     try {
-      const response = await api.get("/super-admin/recent-activities");
-      setActivities(response.data.data.slice(0, 3)); 
+
+      const response = await api.get(
+        "/super-admin/recent-activities"
+      );
+
+      setActivities(
+        response.data.data.slice(0, 3)
+      );
+
+
     } catch (error) {
-      console.error("Using mock activities due to API error:", error);
-      setActivities(mockActivities);
+
+      console.error(
+        "Failed to load activities",
+        error
+      );
+
     }
+
   };
 
   const renderContent = () => {
@@ -57,7 +64,7 @@ export default function SuperAdminDashboard({
         return (
           <div className="space-y-8 animate-in fade-in duration-500">
             <h2 className="text-2xl sm:text-3xl font-black text-gray-900">Administrative Overview</h2>
-            
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {/* Total Hospitals */}
               <button
@@ -127,11 +134,11 @@ export default function SuperAdminDashboard({
             </div>
           </div>
         );
-      case "Hospitals": 
+      case "Hospitals":
         return (
-          <HospitalsView 
-            hospitals={hospitals} 
-            fetchHospitals={fetchHospitals} 
+          <HospitalsView
+            hospitals={hospitals}
+            fetchHospitals={fetchHospitals}
             refreshActivities={fetchRecentActivities}
           />
         );
