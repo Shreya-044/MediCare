@@ -3,6 +3,12 @@ from flask import Blueprint, request, jsonify, g
 from app.middleware.jwt_required import jwt_required
 from app.middleware.role_required import role_required
 from app.utils.cloudinary_config import upload_to_cloudinary
+
+from app.services.report_service import (
+    save_report,
+    get_report_by_appointment
+)
+
 from app.services.admin_service import (
     get_dashboard_stats,
     get_revenue_stats,
@@ -380,6 +386,37 @@ def upload_hospital_image():
     response, status = update_hospital_image(
         hospital_id,
         image_url
+    )
+
+    return jsonify(response), status
+
+@admin_bp.route("/save-report/<appointment_id>", methods=["POST"])
+@jwt_required
+@role_required("admin")
+def save_patient_report(appointment_id):
+
+    data = request.get_json()
+
+    hospital_id = g.current_user["hospital_id"]
+
+    response, status = save_report(
+        appointment_id,
+        hospital_id,
+        data
+    )
+
+    return jsonify(response), status
+
+@admin_bp.route("/get-report/<appointment_id>", methods=["GET"])
+@jwt_required
+@role_required("admin")
+def get_patient_report(appointment_id):
+
+    hospital_id = g.current_user["hospital_id"]
+
+    response, status = get_report_by_appointment(
+        appointment_id,
+        hospital_id
     )
 
     return jsonify(response), status

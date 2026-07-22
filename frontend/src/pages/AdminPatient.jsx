@@ -56,19 +56,30 @@ export default function AdminPatient() {
     }
   };
 
-  const handleSaveReport = async (patientId, reportData) => {
-    try {
-      const token = localStorage.getItem("token");
-      await api.post(`/admin/save-report/${patientId}`, reportData, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      alert("Report saved successfully!");
-      setShowReportModal(null);
-      fetchAppointmentsByDate(selectedDate, selectedDoctorId); // Refresh list
-    } catch (err) {
-      console.error("Error saving report", err);
-    }
-  };
+  const handleSaveReport = async (appointmentId, reportData) => {
+  try {
+    const token = localStorage.getItem("token");
+
+    await api.post(
+      `/admin/save-report/${appointmentId}`,
+      reportData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    alert("Report saved successfully!");
+
+    setShowReportModal(null);
+
+    fetchAppointmentsByDate(selectedDate, selectedDoctorId);
+
+  } catch (err) {
+    console.error(err);
+  }
+};
 
   const fetchSavedReport = async (appointmentId) => {
     try {

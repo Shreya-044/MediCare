@@ -3,6 +3,12 @@ from flask import request, jsonify
 from app.services.patient_service import search_hospitals
 from app.services.patient_service import get_patient_appointments
 from app.utils.auth import patient_required
+
+from app.services.report_service import (
+    get_patient_reports,
+    get_report_by_appointment
+)
+
 from app.services.patient_service import (
     register_patient,
     login_patient,
@@ -150,5 +156,32 @@ def patient_profile(patient_id):
 def patient_appointments(patient_id):
 
     response, status = get_patient_appointments(patient_id)
+
+    return jsonify(response), status
+
+@patient_bp.route("/patient/<patient_id>/reports", methods=["GET"])
+def patient_reports(patient_id):
+
+    response, status = get_patient_reports(patient_id)
+
+    return jsonify(response), status
+
+@patient_bp.route("/patient/<patient_id>/report/<appointment_id>", methods=["GET"])
+def patient_report(patient_id, appointment_id):
+
+    response, status = get_report_by_appointment(
+        appointment_id,
+        None
+    )
+
+    if not response["success"]:
+        return jsonify(response), status
+
+    # Security check
+    if response["data"]["patient_id"] != patient_id:
+        return jsonify({
+            "success": False,
+            "message": "Unauthorized."
+        }), 403
 
     return jsonify(response), status

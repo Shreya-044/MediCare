@@ -201,7 +201,10 @@ def get_hospital_patient_appointments(hospital_id, date=None, doctor_id=None):
             # Appointment details
             "appointmentDate": appointment.get("appointment_date"),
             "appointmentTime": appointment.get("appointment_time"),
-            "appointmentStatus": appointment.get("appointment_status")
+            "appointmentStatus": appointment.get("appointment_status"),
+
+            # Report Status
+            "hasReport": appointment.get("hasReport", False)
 
         })
 

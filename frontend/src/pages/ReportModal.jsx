@@ -1,60 +1,217 @@
 import { useState } from "react";
-import { FiX, FiPlus, FiTrash2, FiDownload } from "react-icons/fi";
+import {
+  FiX,
+  FiPlus,
+  FiTrash2,
+  FiDownload,
+  FiSave,
+} from "react-icons/fi";
 
-export default function ReportModal({ patient, onClose, onSave, viewData }) {
-  const [reportType, setReportType] = useState(viewData?.reportType || "Blood Analysis");
-  const [investigations, setInvestigations] = useState(viewData?.investigations || [{ name: "", result: "", range: "" }]);
-  const [summary, setSummary] = useState(viewData?.summary || "");
+export default function ReportModal({
+  patient,
+  onClose,
+  onSave,
+  viewData,
+}) {
+  const isView = !!viewData;
 
-  const reportTypes = ["Blood Analysis", "Chest X-Ray", "Urinalysis", "Lipid Profile", "Thyroid Function Test"];
+  const [title, setTitle] = useState(viewData?.title || "");
 
-  const addRow = () => setInvestigations([...investigations, { name: "", result: "", range: "" }]);
-  const removeRow = (index) => setInvestigations(investigations.filter((_, i) => i !== index));
-  const updateRow = (index, field, value) => {
-    const updated = [...investigations];
-    updated[index][field] = value;
-    setInvestigations(updated);
+  const [doctorNotes, setDoctorNotes] = useState(
+    viewData?.doctor_notes || ""
+  );
+
+  const [rows, setRows] = useState(
+    viewData?.rows || [
+      {
+        label: "",
+        value: "",
+      },
+    ]
+  );
+
+  const addRow = () => {
+    setRows([
+      ...rows,
+      {
+        label: "",
+        value: "",
+      },
+    ]);
+  };
+
+  const removeRow = (index) => {
+    setRows(rows.filter((_, i) => i !== index));
+  };
+
+  const updateRow = (index, key, value) => {
+    const copy = [...rows];
+    copy[index][key] = value;
+    setRows(copy);
+  };
+
+  const handleSubmit = () => {
+    onSave({
+      title,
+      doctor_notes: doctorNotes,
+      rows,
+    });
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white w-full max-w-2xl rounded-3xl p-6 sm:p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-        <button onClick={onClose} className="absolute top-6 right-6 text-gray-400 hover:text-red-500"><FiX size={24}/></button>
-        
-        <h2 className="text-xl sm:text-2xl font-black text-gray-900 mb-6">{viewData ? "View Medical Report" : "Generate Medical Report"}</h2>
-        
-        <div className="mb-6">
-          <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Report Type</label>
-          <select disabled={!!viewData} className="w-full mt-1 p-3 bg-gray-50 rounded-xl font-bold text-sm outline-none border border-gray-100" value={reportType} onChange={(e) => setReportType(e.target.value)}>
-            {reportTypes.map(type => <option key={type}>{type}</option>)}
-          </select>
+      <div className="bg-white w-full max-w-3xl rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto relative">
+
+        {/* Header */}
+        <div className="sticky top-0 bg-white border-b px-8 py-6 rounded-t-3xl flex justify-between items-center">
+          <div>
+            <h2 className="text-2xl font-black text-gray-900">
+              {isView ? "Medical Report" : "Create Medical Report"}
+            </h2>
+
+            {!isView && patient && (
+              <p className="text-sm text-gray-500 mt-1">
+                Patient : <span className="font-bold">{patient.name}</span>
+              </p>
+            )}
+          </div>
+
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-red-500 transition"
+          >
+            <FiX size={26} />
+          </button>
         </div>
 
-        <div className="space-y-3 mb-6">
-          <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Investigation Details</label>
-          {investigations.map((inv, index) => (
-            <div key={index} className="flex flex-col sm:flex-row gap-2">
-              <input disabled={!!viewData} placeholder="Test Name" className="flex-1 p-3 bg-gray-50 rounded-xl text-sm font-bold" value={inv.name} onChange={(e) => updateRow(index, 'name', e.target.value)} />
-              <div className="flex gap-2">
-                <input disabled={!!viewData} placeholder="Result" className="w-24 p-3 bg-gray-50 rounded-xl text-sm font-bold" value={inv.result} onChange={(e) => updateRow(index, 'result', e.target.value)} />
-                <input disabled={!!viewData} placeholder="Range" className="w-24 p-3 bg-gray-50 rounded-xl text-sm font-bold" value={inv.range} onChange={(e) => updateRow(index, 'range', e.target.value)} />
-                {!viewData && <button onClick={() => removeRow(index)} className="p-3 text-red-500 bg-red-50 rounded-xl"><FiTrash2/></button>}
+        <div className="p-8">
+
+          {/* Report Title */}
+
+          <div className="mb-6">
+            <label className="block text-xs font-black uppercase text-gray-400 mb-2">
+              Report Title
+            </label>
+
+            <input
+              type="text"
+              value={title}
+              readOnly={isView}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Example : Blood Test Report"
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 font-semibold outline-none focus:ring-2 focus:ring-[#0b645b]"
+            />
+          </div>
+
+          {/* Doctor Notes */}
+
+          <div className="mb-8">
+            <label className="block text-xs font-black uppercase text-gray-400 mb-2">
+              Doctor Notes
+            </label>
+
+            <textarea
+              rows={4}
+              value={doctorNotes}
+              readOnly={isView}
+              onChange={(e) => setDoctorNotes(e.target.value)}
+              placeholder="General observations, diagnosis or advice..."
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 font-semibold outline-none resize-none focus:ring-2 focus:ring-[#0b645b]"
+            />
+          </div>
+
+          {/* Report Rows */}
+
+          <div className="mb-4 flex justify-between items-center">
+
+            <label className="text-xs font-black uppercase text-gray-400">
+              Report Details
+            </label>
+
+            {!isView && (
+              <button
+                onClick={addRow}
+                className="flex items-center gap-2 text-[#0b645b] font-bold text-sm hover:underline"
+              >
+                <FiPlus />
+                Add Row
+              </button>
+            )}
+          </div>
+
+          <div className="space-y-3">
+
+            {rows.map((row, index) => (
+
+              <div
+                key={index}
+                className="flex flex-col md:flex-row gap-3"
+              >
+
+                <input
+                  type="text"
+                  placeholder="Label"
+                  readOnly={isView}
+                  value={row.label}
+                  onChange={(e) =>
+                    updateRow(index, "label", e.target.value)
+                  }
+                  className="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 font-semibold outline-none"
+                />
+
+                <input
+                  type="text"
+                  placeholder="Value"
+                  readOnly={isView}
+                  value={row.value}
+                  onChange={(e) =>
+                    updateRow(index, "value", e.target.value)
+                  }
+                  className="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 font-semibold outline-none"
+                />
+
+                {!isView && (
+                  <button
+                    onClick={() => removeRow(index)}
+                    className="px-4 rounded-xl bg-red-50 text-red-500 hover:bg-red-100"
+                  >
+                    <FiTrash2 />
+                  </button>
+                )}
               </div>
-            </div>
-          ))}
-          {!viewData && <button onClick={addRow} className="text-xs font-black text-[#0b645b] flex items-center gap-2 hover:underline py-2"><FiPlus/> Add Row</button>}
-        </div>
 
-        <div>
-          <label className="text-[10px] font-black text-gray-400 uppercase ml-1">Clinical Summary</label>
-          <textarea disabled={!!viewData} className="w-full p-4 bg-gray-50 rounded-xl text-sm font-bold mt-1 outline-none" rows="3" value={summary} onChange={(e) => setSummary(e.target.value)} />
-        </div>
+            ))}
 
-        {!viewData ? (
-          <button onClick={() => onSave({ reportType, investigations, summary })} className="w-full mt-8 py-4 bg-[#0b645b] text-white rounded-2xl font-black text-sm hover:bg-[#084e46]">GENERATE & UPLOAD REPORT</button>
-        ) : (
-          <button className="w-full mt-8 py-4 bg-gray-900 text-white rounded-2xl font-black text-sm flex items-center justify-center gap-2"><FiDownload/> DOWNLOAD PDF</button>
-        )}
+          </div>
+
+          {/* Buttons */}
+
+          <div className="mt-10">
+
+            {!isView ? (
+
+              <button
+                onClick={handleSubmit}
+                className="w-full bg-[#0b645b] hover:bg-[#094d46] text-white py-4 rounded-2xl font-black flex items-center justify-center gap-2 transition"
+              >
+                <FiSave />
+                Save Report
+              </button>
+
+            ) : (
+
+              <button
+                className="w-full bg-gray-900 hover:bg-black text-white py-4 rounded-2xl font-black flex items-center justify-center gap-2 transition"
+              >
+                <FiDownload />
+                Download PDF
+              </button>
+
+            )}
+
+          </div>
+
+        </div>
       </div>
     </div>
   );
