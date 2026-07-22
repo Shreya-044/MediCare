@@ -5,6 +5,7 @@ from app.middleware.role_required import role_required
 from app.utils.cloudinary_config import upload_to_cloudinary
 from app.services.admin_service import (
     get_dashboard_stats,
+    get_revenue_stats,
     get_hospital_patient_appointments,
     get_hospital_profile,
     update_hospital_image
@@ -293,6 +294,28 @@ def dashboard_stats():
     hospital_id = g.current_user["hospital_id"]
 
     response, status = get_dashboard_stats(hospital_id)
+
+    return jsonify(response), status
+
+@admin_bp.route("/revenue-stats", methods=["GET"])
+@jwt_required
+@role_required("admin")
+def revenue_stats():
+
+    hospital_id = g.current_user["hospital_id"]
+
+    mode = request.args.get(
+        "mode",
+        "daily"
+    )
+
+    date = request.args.get("date")
+
+    response, status = get_revenue_stats(
+        hospital_id,
+        mode,
+        date
+    )
 
     return jsonify(response), status
 

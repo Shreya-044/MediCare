@@ -6,15 +6,26 @@ import AdminPatient from './AdminPatient';
 import api from "../services/api";
 
 export default function AdminDashboard({ activeTab = "Dashboard", onNavigate }) {
-  const [dashboardStats, setDashboardStats] = useState({ doctors: 0, staff: 0, patients: 0 });
-  const [revenueData, setRevenueData] = useState({ total: 0, doctors: [] });
+  const [dashboardStats, setDashboardStats] = useState({
+    doctors: 0,
+    staff: 0,
+    patients: 0
+  });
+
+  const [revenueData, setRevenueData] = useState({
+    total_revenue: 0,
+    doctor_revenue: []
+  });
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [viewMode, setViewMode] = useState("daily"); 
+  const [viewMode, setViewMode] = useState("daily");
   const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
     fetchDashboardStats();
-    fetchRevenue(selectedDate, viewMode);
+  }, []);
+
+  useEffect(() => {
+    fetchRevenue();
   }, [selectedDate, viewMode]);
 
   const fetchDashboardStats = async () => {
@@ -24,18 +35,46 @@ export default function AdminDashboard({ activeTab = "Dashboard", onNavigate }) 
     } catch (error) { console.error(error); }
   };
 
-  const fetchRevenue = async (date, mode) => {
+  const fetchRevenue = async () => {
+
     try {
-      const response = await api.get(`/admin/revenue-stats?date=${date}&mode=${mode}`);
-      setRevenueData(response.data.data);
-    } catch (error) { console.error(error); }
+
+      let url = `/admin/revenue-stats?mode=${viewMode}`;
+
+      if (viewMode !== "all") {
+        url += `&date=${selectedDate}`;
+      }
+
+      const response = await api.get(url);
+
+      setRevenueData(
+        response.data.data
+      );
+
+    }
+
+    catch (error) {
+
+      console.error(error);
+
+    }
+
   };
 
   const changeDate = (amount) => {
-    const d = new Date(selectedDate);
-    if (viewMode === "daily") d.setDate(d.getDate() + amount);
-    else d.setMonth(d.getMonth() + amount);
-    setSelectedDate(d.toISOString().split('T')[0].slice(0, viewMode === "daily" ? 10 : 7));
+    const d =
+      viewMode === "monthly"
+        ? new Date(`${selectedDate}-01`)
+        : new Date(selectedDate);
+    if (viewMode === "daily") {
+      d.setDate(d.getDate() + amount);
+      setSelectedDate(d.toISOString().split("T")[0]);
+    }
+
+    if (viewMode === "monthly") {
+      d.setMonth(d.getMonth() + amount);
+      setSelectedDate(d.toISOString().slice(0, 7));
+    }
   };
 
   const stats = [
@@ -43,6 +82,29 @@ export default function AdminDashboard({ activeTab = "Dashboard", onNavigate }) 
     { label: "Active Staff", count: dashboardStats.staff, tab: "Staff" },
     { label: "Total Patients", count: dashboardStats.patients ?? 0, tab: "Patients" },
   ];
+
+  const formatDisplayDate = () => {
+
+    if (viewMode === "all") {
+      return "All Time";
+    }
+
+    const date = new Date(selectedDate);
+
+    if (viewMode === "daily") {
+      return date.toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric"
+      });
+    }
+
+    return date.toLocaleDateString("en-IN", {
+      month: "long",
+      year: "numeric"
+    });
+
+  };
 
   const renderContent = () => {
     switch (activeTab) {
@@ -67,20 +129,61 @@ export default function AdminDashboard({ activeTab = "Dashboard", onNavigate }) 
                 <h3 className="text-lg font-black text-gray-900 flex items-center gap-2">
                   <FiDollarSign className="text-teal-600" /> Revenue Analytics
                 </h3>
-                
+
                 {/* Responsive container for controls */}
                 <div className="flex flex-col-reverse md:flex-row items-center gap-3 w-full md:w-auto">
                   {/* Date navigation appears only in daily mode */}
-                  {viewMode === "daily" && (
+                  {viewMode !== "all" && (
                     <div className="flex items-center gap-2 bg-gray-50 p-1 rounded-xl w-full md:w-auto justify-center">
                       <button onClick={() => changeDate(-1)} className="p-2 hover:bg-white rounded-lg"><FiChevronLeft size={16} /></button>
-                      <span className="text-xs font-black w-24 text-center">{selectedDate}</span>
+                      <span className="text-xs font-black w-32 text-center">
+                        {formatDisplayDate()}
+                      </span>
                       <button onClick={() => changeDate(1)} className="p-2 hover:bg-white rounded-lg"><FiChevronRight size={16} /></button>
                     </div>
                   )}
-                  <select className="bg-gray-50 px-4 py-2 rounded-xl font-bold text-xs outline-none w-full md:w-auto" value={viewMode} onChange={(e) => setViewMode(e.target.value)}>
-                    <option value="daily">Daily View</option>
-                    <option value="monthly">Monthly View</option>
+                  <select
+                    value={viewMode}
+                    onChange={(e) => {
+
+                      const mode = e.target.value;
+
+                      setViewMode(mode);
+
+                      const today = new Date();
+
+                      if (mode === "daily") {
+                        setSelectedDate(
+                          today.toISOString().split("T")[0]
+                        );
+                      }
+
+                      else if (mode === "monthly") {
+                        setSelectedDate(
+                          today.toISOString().slice(0, 7)
+                        );
+                      }
+
+                      else {
+                        setSelectedDate("");
+                      }
+
+                    }}
+                    className="bg-gray-50 px-4 py-2 rounded-xl font-bold text-xs outline-none"
+                  >
+
+                    <option value="daily">
+                      Daily View
+                    </option>
+
+                    <option value="monthly">
+                      Monthly View
+                    </option>
+
+                    <option value="all">
+                      All Time
+                    </option>
+
                   </select>
                 </div>
               </div>
@@ -88,7 +191,7 @@ export default function AdminDashboard({ activeTab = "Dashboard", onNavigate }) 
               <div className="p-6 bg-teal-50 rounded-2xl mb-4">
                 <div className="flex justify-between items-center">
                   <p className="text-sm font-bold text-teal-800">Total Revenue</p>
-                  <p className="text-2xl font-black text-teal-900">₹{revenueData.total}</p>
+                  <p className="text-2xl font-black text-teal-900">₹{revenueData.total_revenue}</p>
                 </div>
               </div>
 
@@ -98,16 +201,22 @@ export default function AdminDashboard({ activeTab = "Dashboard", onNavigate }) 
 
               {expanded && (
                 <div className="mt-4 space-y-2 animate-in slide-in-from-top-2">
-                  {revenueData.doctors.map((doc) => (
-                    <div key={doc.id} className="flex justify-between p-4 border border-gray-100 rounded-xl text-sm font-bold">
-                      <span className="text-gray-900">{doc.name}</span>
-                      <span className="text-teal-600">₹{doc.revenue}</span>
+                  {revenueData.doctor_revenue.map((doc) => (
+                    <div
+                      key={doc.id}
+                      className="flex justify-between p-4 border border-gray-100 rounded-xl text-sm font-bold"
+                    >
+                      <span>{doc.name}</span>
+
+                      <span className="text-teal-600">
+                        ₹{doc.revenue}
+                      </span>
                     </div>
                   ))}
                 </div>
               )}
             </div>
-          </div>
+          </div >
         );
       case "Doctors": return <AdminDoctors />;
       case "Staff": return <AdminStaff />;
