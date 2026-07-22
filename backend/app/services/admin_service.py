@@ -89,8 +89,7 @@ def get_revenue_stats(hospital_id, mode="daily", date=None):
 
     doctors = users.find({
         "role": "doctor",
-        "hospital_id": hospital_id,
-        "status": "active"
+        "hospital_id": hospital_id
     })
 
     for doctor in doctors:
@@ -149,7 +148,12 @@ def get_hospital_patient_appointments(hospital_id, date=None, doctor_id=None):
 
     query = {
         "hospital_id": hospital_id,
-        "appointment_status": "Booked"
+        "appointment_status": {
+            "$in": [
+                "Booked",
+                "Completed"
+            ]
+        }
     }
 
     # Filter by date if provided

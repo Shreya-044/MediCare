@@ -49,8 +49,7 @@ def get_all_doctors(hospital_id):
 
     doctors = users.find({
         "role": "doctor",
-        "hospital_id": hospital_id,
-        "status": "active"
+        "hospital_id": hospital_id
     })
 
     doctor_list = []
@@ -87,8 +86,7 @@ def get_doctor_by_id(doctor_id, hospital_id):
         doctor = users.find_one({
             "_id": ObjectId(doctor_id),
             "role": "doctor",
-            "hospital_id": hospital_id,
-            "status": "active"
+            "hospital_id": hospital_id
         })
 
         if not doctor:

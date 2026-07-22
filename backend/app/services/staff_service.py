@@ -39,6 +39,8 @@ def create_staff(data, hospital_id):
         "role": "staff",
         "hospital_id": hospital_id,
         "designation": data["designation"],
+        "salary": data.get("salary"),
+        "dob": data.get("dob"),
         "status": "active",
         "created_at": datetime.now(timezone.utc)
     }
@@ -57,8 +59,7 @@ def get_all_staff(hospital_id):
 
     staff = users.find({
         "role": "staff",
-        "hospital_id": hospital_id,
-        "status": "active"
+        "hospital_id": hospital_id
     })
 
     staff_list = []
@@ -70,6 +71,8 @@ def get_all_staff(hospital_id):
             "name": member["name"],
             "email": member["email"],
             "designation": member["designation"],
+            "salary": member.get("salary", ""),
+            "dob": member.get("dob", ""),
             "hospital_id": member["hospital_id"],
             "status": member["status"],
             "created_at": member["created_at"]
@@ -90,8 +93,7 @@ def get_staff_by_id(staff_id, hospital_id):
         staff = users.find_one({
             "_id": ObjectId(staff_id),
             "role": "staff",
-            "hospital_id": hospital_id,
-            "status": "active"
+            "hospital_id": hospital_id
         })
 
         if not staff:
@@ -107,6 +109,8 @@ def get_staff_by_id(staff_id, hospital_id):
                 "name": staff["name"],
                 "email": staff["email"],
                 "designation": staff["designation"],
+                "salary": staff.get("salary", ""),
+                "dob": staff.get("dob", ""),
                 "hospital_id": staff["hospital_id"],
                 "status": staff["status"],
                 "created_at": staff["created_at"]
@@ -141,6 +145,8 @@ def update_staff(staff_id, hospital_id, data):
             "name",
             "email",
             "designation",
+            "salary",
+            "dob",
             "status"
         ]
 
