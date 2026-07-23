@@ -11,32 +11,27 @@ export default function Home() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [openFaq, setOpenFaq] = useState(null);
   const [selectedHospital, setSelectedHospital] = useState(null);
-  const [selectedSpecialty, setSelectedSpecialty] = useState(null);
+
+  // Carousel State
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
 
   const searchRef = useRef(null);
   const topRef = useRef(null);
 
   const specialties = [
-    {
-      name: "General Practitioner",
-      icon: "🩺",
-      image: "/general_practitioner.jpg",
-    },
-    { name: "Dental", icon: "🦷", image: "/dental.jpg" },
-    { name: "Orthopedics", icon: "🦴", image: "/orthopedics.jpg" },
-    { name: "Pediatrics", icon: "👶", image: "/pediatrics.jpg" },
-    {
-      name: "Obstetrics Gynecology",
-      icon: "👩‍🍼",
-      image: "/obstetrics_gynecology.jpg",
-    },
-    { name: "Cardiology", icon: "❤️", image: "/cardiology.jpg" },
-    { name: "Psychology", icon: "🧠", image: "/psychology.jpg" },
-    { name: "Oncology", icon: "🔬", image: "/oncology.jpg" },
-    { name: "ENT", icon: "👂", image: "/ENT.jpg" },
-    { name: "Neurology", icon: "⚡", image: "/neurology.jpg" },
-    { name: "Physiotherapy", icon: "🏃", image: "/physiotherapy.jpg" },
-    { name: "Radiology", icon: "☢️", image: "/radiology.jpg" },
+    { name: "General Practitioner", icon: "🩺", image: "/general_practitioner.jpg", color: "bg-teal-600" },
+    { name: "Dental", icon: "🦷", image: "/dental.jpg", color: "bg-blue-600" },
+    { name: "Orthopedics", icon: "🦴", image: "/orthopedics.jpg", color: "bg-amber-600" },
+    { name: "Pediatrics", icon: "👶", image: "/pediatrics.jpg", color: "bg-purple-600" },
+    { name: "Obstetrics Gynecology", icon: "👩‍🍼", image: "/obstetrics_gynecology.jpg", color: "bg-pink-600" },
+    { name: "Cardiology", icon: "❤️", image: "/cardiology.jpg", color: "bg-red-600" },
+    { name: "Psychology", icon: "🧠", image: "/psychology.jpg", color: "bg-indigo-600" },
+    { name: "Oncology", icon: "🔬", image: "/oncology.jpg", color: "bg-stone-600" },
+    { name: "ENT", icon: "👂", image: "/ENT.jpg", color: "bg-orange-600" },
+    { name: "Neurology", icon: "⚡", image: "/neurology.jpg", color: "bg-sky-600" },
+    { name: "Physiotherapy", icon: "🏃", image: "/physiotherapy.jpg", color: "bg-green-600" },
+    { name: "Radiology", icon: "☢️", image: "/radiology.jpg", color: "bg-gray-600" },
   ];
 
   const faqs = [
@@ -118,6 +113,29 @@ export default function Home() {
       setLoading(false);
     }
   };
+
+  // Auto-cycle logic
+  useEffect(() => {
+    if (isPaused) return;
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % specialties.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [isPaused, specialties.length]);
+
+  const handleNext = () => {
+    setIsPaused(true);
+    setCurrentIndex((prev) => (prev + 1) % specialties.length);
+    setTimeout(() => setIsPaused(false), 3000); // Resume auto-cycle after 3s of inactivity
+  };
+
+  const handlePrev = () => {
+    setIsPaused(true);
+    setCurrentIndex((prev) => (prev - 1 + specialties.length) % specialties.length);
+    setTimeout(() => setIsPaused(false), 3000); // Resume auto-cycle after 3s of inactivity
+  };
+
+  const currentSpecialty = specialties[currentIndex];
 
   return (
     <div className="bg-slate-50 min-h-screen pb-20" ref={topRef}>
@@ -244,36 +262,11 @@ export default function Home() {
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
             {[
-              {
-                title: "Convenient Access",
-                desc: "INSTANT MEDICAL CARE",
-                icon: "📱",
-                color: "bg-pink-50",
-              },
-              {
-                title: "Expert Specialists",
-                desc: "TOP DOCTORS ONLINE",
-                icon: "👨‍⚕️",
-                color: "bg-cyan-50",
-              },
-              {
-                title: "Time & Cost Savings",
-                desc: "EFFICIENT CONSULTATIONS",
-                icon: "💰",
-                color: "bg-orange-50",
-              },
-              {
-                title: "Personalized Treatment",
-                desc: "TAILORED HEALTHCARE",
-                icon: "🧩",
-                color: "bg-green-50",
-              },
-              {
-                title: "Secure & Private",
-                desc: "SAFE TELEMEDICINE",
-                icon: "🛡️",
-                color: "bg-indigo-50",
-              },
+              { title: "Convenient Access", desc: "INSTANT MEDICAL CARE", icon: "📱", color: "bg-pink-50" },
+              { title: "Expert Specialists", desc: "TOP DOCTORS ONLINE", icon: "👨‍⚕️", color: "bg-cyan-50" },
+              { title: "Time & Cost Savings", desc: "EFFICIENT CONSULTATIONS", icon: "💰", color: "bg-orange-50" },
+              { title: "Personalized Treatment", desc: "TAILORED HEALTHCARE", icon: "🧩", color: "bg-green-50" },
+              { title: "Secure & Private", desc: "SAFE TELEMEDICINE", icon: "🛡️", color: "bg-indigo-50" },
             ].map((item) => (
               <div
                 key={item.title}
@@ -293,99 +286,46 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Featured Specialties Section */}
+        {/* Carousel Specialties Section */}
         <section className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm">
-          <h2 className="text-2xl font-black text-gray-900 mb-10 text-center">
-            {selectedSpecialty
-              ? `Doctors in ${selectedSpecialty.name}`
-              : "Explore Medical Specialties"}
-          </h2>
+          <div className="flex justify-between items-center mb-10">
+            <button onClick={handlePrev} className="p-3 bg-white border border-slate-200 rounded-full hover:bg-slate-100 shadow-sm text-lg font-bold">{"<"}</button>
+            <h2 className="text-2xl font-black text-gray-900 text-center">
+              Doctors in {currentSpecialty.name}
+            </h2>
+            <button onClick={handleNext} className="p-3 bg-white border border-slate-200 rounded-full hover:bg-slate-100 shadow-sm text-lg font-bold">{">"}</button>
+          </div>
 
           <div className="flex flex-col md:flex-row gap-8">
-            {/* Left: Selector */}
-            <div
-              className={`grid gap-4 ${selectedSpecialty ? "grid-cols-1 md:w-64" : "grid-cols-2 md:grid-cols-4 lg:grid-cols-6 w-full"}`}
-            >
-              {(selectedSpecialty ? [selectedSpecialty] : specialties).map(
-                (s, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setSelectedSpecialty(s)}
-                    className={`flex flex-col items-center justify-center gap-3 p-3 rounded-2xl border transition-all overflow-hidden ${
-                      selectedSpecialty?.name === s.name
-                        ? `${s.color} text-white shadow-lg`
-                        : "bg-slate-50 text-gray-800 border-slate-100 hover:border-slate-300"
-                    }`}
-                  >
-                    {/* Conditional rendering: Emoji when unselected, Full-container Photo when selected */}
-                    {selectedSpecialty ? (
-                      <img
-                        src={s.image}
-                        alt={s.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-3xl">{s.icon}</span>
-                    )}
-                    <span className="font-bold text-xs truncate max-w-full px-1">
-                      {s.name}
-                    </span>
-                  </button>
-                ),
-              )}
-
-              {selectedSpecialty && (
-                <button
-                  onClick={() => setSelectedSpecialty(null)}
-                  className="mt-4 px-4 py-1.5 bg-red-50 text-red-500 rounded-full font-bold text-[10px] hover:bg-red-100 transition-all border border-red-100 w-fit mx-auto"
-                >
-                  Clear Selection
-                </button>
-              )}
+            {/* Left: Image */}
+            <div className="w-full md:w-1/3">
+              <img src={currentSpecialty.image} alt={currentSpecialty.name} className="w-full h-64 object-cover rounded-2xl shadow-sm" />
             </div>
 
             {/* Right: Results */}
-            {selectedSpecialty && (
-              <div className="flex-1">
-                <div className="space-y-4">
-                  {[1, 2, 3].map((_, i) => (
-                    <div
-                      key={i}
-                      className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-wrap sm:flex-nowrap justify-between items-center gap-4 hover:shadow-md transition-shadow"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center text-xl shadow-sm">
-                          👨‍⚕️
-                        </div>
-                        <div>
-                          <p className="font-bold text-sm text-gray-900">
-                            Dr. Placeholder {i + 1}
-                          </p>
-                          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wide mt-0.5">
-                            15 Yrs Exp • Fee: ₹{800 + i * 200}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex flex-col items-end gap-2">
-                        <div className="flex items-center gap-1.5">
-                          <span
-                            className={`h-2 w-2 rounded-full ${i % 2 === 0 ? "bg-green-500" : "bg-red-500"}`}
-                          ></span>
-                          <span
-                            className={`text-[9px] font-black uppercase tracking-wider ${i % 2 === 0 ? "text-green-700" : "text-red-700"}`}
-                          >
-                            {i % 2 === 0 ? "Live" : "Unavailable"}
-                          </span>
-                        </div>
-                        <button className="bg-[#0b645b] text-white text-[10px] font-bold px-4 py-2 rounded-xl hover:bg-[#084e46] transition-all">
-                          Book Appointment
-                        </button>
+            <div className="flex-1">
+              <div className="space-y-4">
+                {[1, 2, 3].map((_, i) => (
+                  <div key={i} className="bg-slate-50 p-5 rounded-2xl border border-slate-100 flex flex-wrap sm:flex-nowrap justify-between items-center gap-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-xl shadow-sm border border-slate-100">👨‍⚕️</div>
+                      <div>
+                        <p className="font-bold text-sm text-gray-900">Dr. Placeholder {i + 1}</p>
+                        <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wide mt-0.5">15 Yrs Exp • Fee: ₹{800 + i * 200}</p>
                       </div>
                     </div>
-                  ))}
-                </div>
+                    <div className="flex flex-col items-end gap-2">
+                      <span className={`text-[9px] font-black uppercase ${i % 2 === 0 ? 'text-green-700' : 'text-red-700'}`}>
+                        {i % 2 === 0 ? "● LIVE" : "● UNAVAILABLE"}
+                      </span>
+                      <button className="bg-[#0b645b] text-white text-[10px] font-bold px-4 py-2 rounded-xl hover:bg-[#084e46]">
+                        Book Appointment
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
-            )}
+            </div>
           </div>
         </section>
 
