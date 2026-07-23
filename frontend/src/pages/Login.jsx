@@ -109,7 +109,7 @@ export default function Login(props) {
           </div>
         </div>
 
-        {/* CMS Switcher - Responsive padding */}
+        {/* CMS Switcher */}
         <div className="text-center px-2">
           <div className="inline-block rounded-full bg-slate-800/80 px-4 sm:px-6 py-3 text-[10px] sm:text-[11px] text-white backdrop-blur-sm">
             Are you a Hospital Staff? <Link to="/cms-login" className="font-bold text-[#2dd4bf] hover:underline">Log in to CMS</Link>
