@@ -98,9 +98,11 @@ export default function AppointmentForm() {
 
     try {
       const token = localStorage.getItem("token");
+
       const response = await api.post("/patient/book-appointment", requestBody, {
         headers: { Authorization: token ? `Bearer ${token}` : "" },
       });
+
       triggerPopup(response.data.message);
       setTimeout(() => navigate(isLoggedIn ? "/appointments" : "/login"), 2000);
     } catch (err) {

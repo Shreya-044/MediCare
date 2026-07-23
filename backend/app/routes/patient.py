@@ -98,35 +98,15 @@ def book_appointment():
 
     auth_header = request.headers.get("Authorization")
 
-    # -----------------------------
-    # Logged-in patient
-    # -----------------------------
+    # Logged in patient
     if auth_header:
 
         from app.utils.jwt import verify_token
 
         token = auth_header.split(" ")[1]
-
         payload = verify_token(token)
 
         if payload and payload.get("patient_id"):
-
-            required_fields = [
-                "doctor_id",
-                "appointment_date",
-                "appointment_time",
-                "consultation_fee",
-                "platform_fee",
-                "gst",
-                "total_amount"
-            ]
-
-            for field in required_fields:
-                if field not in data or data[field] in [None, ""]:
-                    return jsonify({
-                        "success": False,
-                        "message": f"{field} is required."
-                    }), 400
 
             response, status = book_logged_in_patient(
                 payload["patient_id"],
@@ -135,9 +115,35 @@ def book_appointment():
 
             return jsonify(response), status
 
-    # -----------------------------
     # Guest patient
-    # -----------------------------
+
+    required_fields = [
+        "name",
+        "email",
+        "phone",
+        "password",
+        "dob",
+        "gender",
+        "doctor_id",
+        "appointment_date",
+        "appointment_time",
+        "consultation_fee",
+        "platform_fee",
+        "gst",
+        "total_amount"
+    ]
+
+    for field in required_fields:
+        if field not in data or data[field] in [None, ""]:
+            return jsonify({
+                "success": False,
+                "message": f"{field} is required."
+            }), 400
+
+    response, status = register_and_book(data)
+
+    return jsonify(response), status
+
 @patient_bp.route("/hospital/<hospital_id>/doctors", methods=["GET"])
 def hospital_doctors(hospital_id):
 

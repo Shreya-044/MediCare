@@ -11,7 +11,8 @@ import {
   FiBriefcase,
   FiHome,
   FiUser,
-  FiPhone
+  FiPhone,
+  FiX
 } from "react-icons/fi";
 import api from "../services/api";
 
