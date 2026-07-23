@@ -22,6 +22,7 @@ import DoctorPatientFiles from "./pages/DoctorPatientFiles";
 import LiveQueue from "./pages/LiveQueue";
 import { LoadingProvider } from "./context/LoadingContext";
 import Loader from "./components/Loader";
+import ScrollToTop from "./components/ScrollToTop";
 
 function AppContent() {
   const navigate = useNavigate();
@@ -219,6 +220,7 @@ function AppContent() {
 export default function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <AppContent />
     </BrowserRouter>
   );
