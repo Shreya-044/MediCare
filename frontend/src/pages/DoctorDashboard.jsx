@@ -19,8 +19,6 @@ import {
 export default function DoctorHome() {
   const [activeTab, setActiveTab] = useState("Queue");
   const [queue, setQueue] = useState([]);
-  const [donePatients, setDonePatients] = useState([]);
-  const [noShowPatients, setNoShowPatients] = useState([]);
   const [isDoctorLive, setIsDoctorLive] = useState(false);
   const [leaveRequests, setLeaveRequests] = useState([]);
   const [newLeave, setNewLeave] = useState({
@@ -57,6 +55,12 @@ export default function DoctorHome() {
     fetchAttendance();
     fetchLeaves();
     fetchSalary();
+
+    const interval = setInterval(() => {
+      fetchQueue(selectedDate);
+    }, 3000);
+
+    return () => clearInterval(interval);
   }, [selectedDate]);
 
   // -- Queue Date Logic --
@@ -103,12 +107,16 @@ export default function DoctorHome() {
 
   const fetchQueue = async (date) => {
     try {
-      const formattedDate = date.toISOString().split("T")[0];
+      const formattedDate =
+        `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")
+        }-${String(date.getDate()).padStart(2, "0")
+        }`;
       const response = await api.get(`/queue?date=${formattedDate}`);
 
       if (response.data.success) {
         const formattedQueue = response.data.data.map((item, index) => ({
           _id: item._id,
+          queue_number: item.queue_number,
           name: item.patient_name,
           time: item.appointment_time,
           status: index === 0 ? "Visiting" : index === 1 ? "Next" : "Pending",
@@ -128,8 +136,12 @@ export default function DoctorHome() {
   const fetchAttendance = async () => {
     try {
       const response = await api.get("/doctor/attendance");
+
       if (response.data.success) {
         setDailyLogs(response.data.data);
+
+        setIsPunchedIn(response.data.is_punched_in);
+        setIsDoctorLive(response.data.is_punched_in);
       }
     } catch (err) {
       console.log(err);
@@ -158,20 +170,33 @@ export default function DoctorHome() {
     }
   };
 
-  const handlePatientVisit = (id, action) => {
-    if (!isDoctorLive) return;
-    const patient = queue.find((p) => p._id === id);
-    if (action === "visited") {
-      setDonePatients([...donePatients, { ...patient, status: "Visited" }]);
-    } else if (action === "noshow") {
-      setNoShowPatients([...noShowPatients, { ...patient, status: "No Show" }]);
+  const completeAppointment = async (appointmentId) => {
+    try {
+      const response = await api.put(
+        `/doctor/appointment/${appointmentId}/complete`
+      );
+
+      if (response.data.success) {
+        fetchQueue(selectedDate);
+      }
+    } catch (err) {
+      console.log(err);
+      alert(err.response?.data?.message || "Unable to complete appointment");
     }
-    const remaining = queue.filter((p) => p._id !== id);
-    if (remaining.length > 0) {
-      remaining[0].status = "Visiting";
-      if (remaining.length > 1) remaining[1].status = "Next";
+  };
+
+  const noShowAppointment = async (appointmentId) => {
+    try {
+      const response = await api.put(
+        `/doctor/appointment/${appointmentId}/no-show`
+      );
+
+      if (response.data.success) {
+        fetchQueue(selectedDate);
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || "Unable to mark No Show");
     }
-    setQueue(remaining);
   };
 
   const handlePunchIn = async () => {
@@ -225,8 +250,10 @@ export default function DoctorHome() {
     { name: "Salary", icon: <FiDollarSign /> },
   ];
 
+  const today = new Date().toISOString().split("T")[0];
+
   const hasPunchedToday = dailyLogs.some(
-    (log) => log.date === new Date().toLocaleDateString(),
+    (log) => log.date === today
   );
 
   const daysInGrid = getDaysInMonthGrid();
@@ -254,11 +281,10 @@ export default function DoctorHome() {
               setActiveTab(tab.name);
               setCurrentPage(1);
             }}
-            className={`flex items-center whitespace-nowrap gap-2 px-6 py-3 rounded-2xl text-xs font-bold transition ${
-              activeTab === tab.name
-                ? "bg-[#0b645b] text-white shadow-lg shadow-[#0b645b]/20"
-                : "bg-white text-gray-400 hover:bg-gray-50 border border-gray-100"
-            }`}
+            className={`flex items-center whitespace-nowrap gap-2 px-6 py-3 rounded-2xl text-xs font-bold transition ${activeTab === tab.name
+              ? "bg-[#0b645b] text-white shadow-lg shadow-[#0b645b]/20"
+              : "bg-white text-gray-400 hover:bg-gray-50 border border-gray-100"
+              }`}
           >
             {tab.icon} {tab.name}
           </button>
@@ -349,7 +375,6 @@ export default function DoctorHome() {
                   </div>
                 )}
               </div>
-
               <div>
                 <h3 className="font-black text-gray-900 mb-4 text-sm">
                   Appointments for{" "}
@@ -372,7 +397,9 @@ export default function DoctorHome() {
                         className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 bg-white border border-gray-100 rounded-2xl shadow-sm hover:border-gray-200 gap-4"
                       >
                         <div>
-                          <p className="font-bold text-gray-900">{p.name}</p>
+                          <p className="font-bold text-gray-900">
+                            Queue #{p.queue_number} - {p.name}
+                          </p>
                           <p
                             className={`text-[10px] uppercase font-bold ${p.status === "Visiting" ? "text-green-600" : p.status === "Next" ? "text-orange-600" : "text-gray-400"}`}
                           >
@@ -381,14 +408,14 @@ export default function DoctorHome() {
                         </div>
                         <div className="flex gap-2">
                           <button
-                            onClick={() => handlePatientVisit(p._id, "visited")}
+                            onClick={() => completeAppointment(p._id)}
                             disabled={!isDoctorLive}
                             className={`p-2 rounded-xl ${isDoctorLive ? "bg-green-50 text-green-600 hover:bg-green-100" : "bg-gray-100 text-gray-400 cursor-not-allowed"}`}
                           >
                             <FiCheck />
                           </button>
                           <button
-                            onClick={() => handlePatientVisit(p._id, "noshow")}
+                            onClick={() => noShowAppointment(p._id)}
                             disabled={!isDoctorLive}
                             className={`p-2 rounded-xl ${isDoctorLive ? "bg-red-50 text-red-600 hover:bg-red-100" : "bg-gray-100 text-gray-400 cursor-not-allowed"}`}
                           >
@@ -401,31 +428,8 @@ export default function DoctorHome() {
                 )}
               </div>
             </div>
-
-            <div className="pt-8 border-t border-gray-100">
-              <h3 className="font-black text-gray-900 mb-4">Completed</h3>
-              <div className="space-y-2">
-                {donePatients.map((p) => (
-                  <div
-                    key={`${p._id}-done`}
-                    className="flex items-center justify-between p-4 bg-blue-50 border border-blue-100 rounded-2xl"
-                  >
-                    <p className="font-bold text-sm text-blue-900">{p.name}</p>
-                    <span className="text-[10px] font-black uppercase bg-blue-100 text-blue-600 px-3 py-1 rounded-full">
-                      Done
-                    </span>
-                  </div>
-                ))}
-                {donePatients.length === 0 && (
-                  <p className="text-sm text-gray-400">
-                    No patients marked done.
-                  </p>
-                )}
-              </div>
-            </div>
           </div>
         )}
-
         {activeTab === "Attendance" && (
           <div className="max-w-4xl mx-auto py-4 animate-in fade-in duration-500">
             <div className="text-center mb-10">
@@ -436,27 +440,24 @@ export default function DoctorHome() {
                 Manage your daily work hours and logs
               </p>
             </div>
-
             <div className="flex flex-wrap justify-center gap-4 mb-12">
               <button
                 onClick={handlePunchIn}
                 disabled={isPunchedIn || hasPunchedToday}
-                className={`flex items-center gap-3 px-8 py-4 rounded-2xl font-black text-sm transition-all shadow-lg active:scale-95 ${
-                  isPunchedIn || hasPunchedToday
-                    ? "bg-gray-100 text-gray-400 cursor-not-allowed border-2 border-transparent"
-                    : "bg-[#0b645b] text-white hover:bg-[#0b645b]/90 border-2 border-transparent"
-                }`}
+                className={`flex items-center gap-3 px-8 py-4 rounded-2xl font-black text-sm transition-all shadow-lg active:scale-95 ${isPunchedIn || hasPunchedToday
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed border-2 border-transparent"
+                  : "bg-[#0b645b] text-white hover:bg-[#0b645b]/90 border-2 border-transparent"
+                  }`}
               >
                 <FiLogIn /> Punch In
               </button>
               <button
                 onClick={handlePunchOut}
                 disabled={!isPunchedIn}
-                className={`flex items-center gap-3 px-8 py-4 rounded-2xl font-black text-sm transition-all shadow-lg active:scale-95 ${
-                  !isPunchedIn
-                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                    : "bg-red-500 text-white hover:bg-red-600"
-                }`}
+                className={`flex items-center gap-3 px-8 py-4 rounded-2xl font-black text-sm transition-all shadow-lg active:scale-95 ${!isPunchedIn
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  : "bg-red-500 text-white hover:bg-red-600"
+                  }`}
               >
                 <FiLogOut /> Punch Out
               </button>
@@ -513,9 +514,9 @@ export default function DoctorHome() {
                               <span className="font-bold text-gray-900">
                                 {log.punch_out
                                   ? new Date(log.punch_out).toLocaleTimeString(
-                                      [],
-                                      { hour: "2-digit", minute: "2-digit" },
-                                    )
+                                    [],
+                                    { hour: "2-digit", minute: "2-digit" },
+                                  )
                                   : "-"}
                               </span>
                             </div>
@@ -731,86 +732,86 @@ export default function DoctorHome() {
         )}
 
         {activeTab === "Salary" && (
-  <div className="space-y-8 animate-in fade-in duration-500">
-    {/* Header Section */}
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-      <div>
-        <h3 className="font-black text-2xl text-gray-900">Earnings Overview</h3>
-        <p className="text-sm text-gray-500 font-medium">Track your performance-based incentives and deductions</p>
-      </div>
-      <span className="self-start sm:self-auto text-[10px] font-black text-gray-500 uppercase bg-gray-100 px-4 py-1.5 rounded-full tracking-wider">
-        Fiscal Year 2026
-      </span>
-    </div>
-
-    {/* Financial Summary Cards */}
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div className="p-8 bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all group">
-        <p className="text-[10px] font-black text-teal-600 uppercase flex items-center gap-2 mb-3">
-          <FiTrendingUp className="text-base" /> Monthly Earnings
-        </p>
-        <p className="text-4xl font-black text-[#0b645b] group-hover:scale-[1.02] transition-transform">
-          ₹{salary.monthly_income.toLocaleString()}
-        </p>
-      </div>
-      <div className="p-8 bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all group">
-        <p className="text-[10px] font-black text-blue-600 uppercase flex items-center gap-2 mb-3">
-          <FiDollarSign className="text-base" /> Lifetime Earnings
-        </p>
-        <p className="text-4xl font-black text-blue-900 group-hover:scale-[1.02] transition-transform">
-          ₹{salary.all_time_income.toLocaleString()}
-        </p>
-      </div>
-      <div className="p-8 bg-red-50/50 rounded-3xl border border-red-100 hover:border-red-200 transition-all">
-        <p className="text-[10px] font-black text-red-600 uppercase mb-3">Total Deductions</p>
-        <p className="text-4xl font-black text-red-900">
-          ₹{salary.total_deduction.toLocaleString()}
-        </p>
-      </div>
-    </div>
-
-    {/* Deduction Breakdown Section */}
-    <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm">
-      <h4 className="font-black text-lg text-gray-900 mb-8">Deduction Breakdown</h4>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-        
-        {/* Detailed Breakdown List */}
-        <div className="space-y-4">
-          <div className="flex justify-between items-center p-6 bg-gray-50 rounded-2xl border border-gray-100">
-            <div>
-                <p className="text-sm font-bold text-gray-900">Early Logout</p>
-                <p className="text-[10px] font-black text-gray-400 uppercase mt-0.5">Applied Penalties</p>
+          <div className="space-y-8 animate-in fade-in duration-500">
+            {/* Header Section */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h3 className="font-black text-2xl text-gray-900">Earnings Overview</h3>
+                <p className="text-sm text-gray-500 font-medium">Track your performance-based incentives and deductions</p>
+              </div>
+              <span className="self-start sm:self-auto text-[10px] font-black text-gray-500 uppercase bg-gray-100 px-4 py-1.5 rounded-full tracking-wider">
+                Fiscal Year 2026
+              </span>
             </div>
-            <span className="font-black text-gray-900 bg-white px-4 py-2 rounded-xl shadow-sm border border-gray-100">
-              {salary.early_logout_count} × ₹{salary.early_logout_deduction}
-            </span>
-          </div>
-          <div className="flex justify-between items-center p-6 bg-gray-50 rounded-2xl border border-gray-100">
-            <div>
-                <p className="text-sm font-bold text-gray-900">Approved Leaves</p>
-                <p className="text-[10px] font-black text-gray-400 uppercase mt-0.5">Deduction per day</p>
-            </div>
-            <span className="font-black text-gray-900 bg-white px-4 py-2 rounded-xl shadow-sm border border-gray-100">
-              {salary.leave_count} × ₹{salary.leave_deduction}
-            </span>
-          </div>
-        </div>
 
-        {/* Net Summary Display */}
-        <div className="flex flex-col justify-center items-center p-8 bg-gray-900 rounded-3xl text-center relative overflow-hidden">
-          <div className="absolute inset-0 bg-[#0b645b] opacity-10 blur-3xl"></div>
-          <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-2 z-10">
-            Net Deduction
-          </span>
-          <span className="text-5xl font-black text-white z-10">
-            ₹{salary.total_deduction.toLocaleString()}
-          </span>
-          <div className="w-16 h-1.5 bg-[#0b645b] mt-6 rounded-full z-10"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
+            {/* Financial Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="p-8 bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all group">
+                <p className="text-[10px] font-black text-teal-600 uppercase flex items-center gap-2 mb-3">
+                  <FiTrendingUp className="text-base" /> Monthly Earnings
+                </p>
+                <p className="text-4xl font-black text-[#0b645b] group-hover:scale-[1.02] transition-transform">
+                  ₹{salary.monthly_income.toLocaleString()}
+                </p>
+              </div>
+              <div className="p-8 bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all group">
+                <p className="text-[10px] font-black text-blue-600 uppercase flex items-center gap-2 mb-3">
+                  <FiDollarSign className="text-base" /> Lifetime Earnings
+                </p>
+                <p className="text-4xl font-black text-blue-900 group-hover:scale-[1.02] transition-transform">
+                  ₹{salary.all_time_income.toLocaleString()}
+                </p>
+              </div>
+              <div className="p-8 bg-red-50/50 rounded-3xl border border-red-100 hover:border-red-200 transition-all">
+                <p className="text-[10px] font-black text-red-600 uppercase mb-3">Total Deductions</p>
+                <p className="text-4xl font-black text-red-900">
+                  ₹{salary.total_deduction.toLocaleString()}
+                </p>
+              </div>
+            </div>
+
+            {/* Deduction Breakdown Section */}
+            <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm">
+              <h4 className="font-black text-lg text-gray-900 mb-8">Deduction Breakdown</h4>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+
+                {/* Detailed Breakdown List */}
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center p-6 bg-gray-50 rounded-2xl border border-gray-100">
+                    <div>
+                      <p className="text-sm font-bold text-gray-900">Early Logout</p>
+                      <p className="text-[10px] font-black text-gray-400 uppercase mt-0.5">Applied Penalties</p>
+                    </div>
+                    <span className="font-black text-gray-900 bg-white px-4 py-2 rounded-xl shadow-sm border border-gray-100">
+                      {salary.early_logout_count} × ₹{salary.early_logout_deduction}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center p-6 bg-gray-50 rounded-2xl border border-gray-100">
+                    <div>
+                      <p className="text-sm font-bold text-gray-900">Approved Leaves</p>
+                      <p className="text-[10px] font-black text-gray-400 uppercase mt-0.5">Deduction per day</p>
+                    </div>
+                    <span className="font-black text-gray-900 bg-white px-4 py-2 rounded-xl shadow-sm border border-gray-100">
+                      {salary.leave_count} × ₹{salary.leave_deduction}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Net Summary Display */}
+                <div className="flex flex-col justify-center items-center p-8 bg-gray-900 rounded-3xl text-center relative overflow-hidden">
+                  <div className="absolute inset-0 bg-[#0b645b] opacity-10 blur-3xl"></div>
+                  <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-2 z-10">
+                    Net Deduction
+                  </span>
+                  <span className="text-5xl font-black text-white z-10">
+                    ₹{salary.total_deduction.toLocaleString()}
+                  </span>
+                  <div className="w-16 h-1.5 bg-[#0b645b] mt-6 rounded-full z-10"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

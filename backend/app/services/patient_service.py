@@ -348,7 +348,6 @@ def get_patient_appointments(patient_id):
 
             continue
 
-
         appointment_list.append({
 
             "_id": str(appointment["_id"]),
@@ -367,19 +366,14 @@ def get_patient_appointments(patient_id):
                 "hospital_name",
                 "Unknown Hospital"
             ),
-
-            "appointment_date": appointment.get(
-                "appointment_date"
-            ),
-
-            "appointment_time": appointment.get(
-                "appointment_time"
-            ),
-
             "appointment_status": appointment.get(
                 "appointment_status"
             ),
-
+            "appointment_date": appointment["appointment_date"],
+            "appointment_time": appointment["appointment_time"],
+            "queue_number": appointment["queue_number"],
+            "patients_ahead": appointment["queue_number"] - 1,
+            "expected_wait": (appointment["queue_number"] - 1) * 15,
             "consultation_fee": appointment.get(
                 "consultation_fee",
                 0
@@ -398,16 +392,7 @@ def get_patient_appointments(patient_id):
             "total_amount": appointment.get(
                 "total_amount",
                 0
-            ),
-
-            "patientsAhead": appointment.get(
-                "patients_ahead"
-            ),
-
-            "expectedWait": appointment.get(
-                "expected_wait"
             )
-
         })
 
 

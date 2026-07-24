@@ -32,6 +32,14 @@ def book_appointment(data):
             "message": "Doctor not found."
         }, 404
 
+    today = data["appointment_date"]
+    queue_count = appointments.count_documents({
+        "doctor_id": ObjectId(data["doctor_id"]),
+        "appointment_date": today
+    })
+
+    queue_number = queue_count + 1
+
     appointment = {
 
         "patient_id": ObjectId(data["patient_id"]),
@@ -43,8 +51,8 @@ def book_appointment(data):
         "appointment_date": data["appointment_date"],
 
         "appointment_time": data["appointment_time"],
-
-        "appointment_status": "Booked",
+        "queue_number": queue_number,
+        "appointment_status": "Waiting",
 
         "payment_status": "Pending",
 

@@ -236,49 +236,6 @@ def deactivate_doctor(doctor_id, hospital_id):
             "message": "Invalid Doctor ID."
         }, 400
 
-def get_doctor_queue(doctor_id):
-
-    appointments = db["appointments"]
-    patients = db["patients"]
-
-    today = datetime.now().strftime("%Y-%m-%d")
-
-    result = appointments.find({
-        "doctor_id": ObjectId(doctor_id),
-        "appointment_date": today,
-        "appointment_status": "Booked"
-    }).sort("appointment_time", 1)
-
-    queue = []
-
-    position = 1
-
-    for appointment in result:
-
-        patient = patients.find_one({
-            "_id": appointment["patient_id"]
-        })
-
-        if not patient:
-            continue
-
-        queue.append({
-            "_id": str(appointment["_id"]),
-            "patient_name": patient["name"],
-            "patient_email": patient["email"],
-            "patient_phone": patient["phone"],
-            "appointment_time": appointment["appointment_time"],
-            "appointment_status": appointment["appointment_status"],
-            "position": position
-        })
-
-        position += 1
-
-    return {
-        "success": True,
-        "data": queue
-    }, 200
-
 attendance = db["attendance"]
 users = db["users"]
 doctor_leaves = db["doctor_leaves"]
@@ -371,17 +328,19 @@ def punch_out(doctor_id):
     punch_in = record["punch_in"]
     if punch_in.tzinfo is None:
         punch_in = punch_in.replace(tzinfo=timezone.utc)
-        hours = (
-            now - punch_in
-            ).total_seconds() / 3600
-        attendance.update_one(
+        hours = (now - punch_in).total_seconds() / 3600
+        status = "Present"
+        if hours < 8:
+            status = "Early Logout"
+            attendance.update_one(
             {
                 "_id": record["_id"]
             },
         {
             "$set": {
                 "punch_out": now,
-                "working_hours": round(hours, 2)
+                "working_hours": round(hours, 2),
+                "attendance_status": status
             }
         }
     )
@@ -410,7 +369,12 @@ def get_attendance_history(doctor_id):
 
     data = []
 
+    is_punched_in = False
+
     for item in result:
+
+        if len(data) == 0 and item["punch_out"] is None:
+            is_punched_in = True
 
         data.append({
             "date": item["date"],
@@ -422,6 +386,7 @@ def get_attendance_history(doctor_id):
 
     return {
         "success": True,
+        "is_punched_in": is_punched_in,
         "data": data
     }, 200
 
@@ -610,8 +575,11 @@ def get_doctor_appointments(doctor_id, date):
 
     result = appointments.find({
         "doctor_id": ObjectId(doctor_id),
-        "appointment_date": date
-    }).sort("appointment_time", 1)
+        "appointment_date": date,
+        "appointment_status": {
+            "$nin": ["Completed", "No Show"]
+        }
+    }).sort("queue_number", 1)
 
     data = []
 
@@ -625,21 +593,14 @@ def get_doctor_appointments(doctor_id, date):
             continue
 
         data.append({
-
             "_id": str(appointment["_id"]),
-
+            "queue_number": appointment["queue_number"],
             "patient_name": patient["name"],
-
             "patient_email": patient["email"],
-
             "patient_phone": patient["phone"],
-
             "appointment_time": appointment["appointment_time"],
-
             "appointment_date": appointment["appointment_date"],
-
             "status": appointment["appointment_status"]
-
         })
 
     return {
@@ -648,4 +609,64 @@ def get_doctor_appointments(doctor_id, date):
 
         "data": data
 
+    }, 200
+
+def complete_appointment(appointment_id):
+
+    appointments = db["appointments"]
+
+    appointment = appointments.find_one({
+        "_id": ObjectId(appointment_id)
+    })
+
+    if not appointment:
+        return {
+            "success": False,
+            "message": "Appointment not found."
+        },404
+
+    appointments.update_one(
+        {
+            "_id": ObjectId(appointment_id)
+        },
+        {
+            "$set":{
+                "appointment_status":"Completed"
+            }
+        }
+    )
+
+    return {
+        "success":True,
+        "message":"Patient completed."
+    },200
+
+def mark_no_show(appointment_id):
+
+    appointments = db["appointments"]
+
+    appointment = appointments.find_one({
+        "_id": ObjectId(appointment_id)
+    })
+
+    if not appointment:
+        return {
+            "success": False,
+            "message": "Appointment not found."
+        }, 404
+
+    appointments.update_one(
+        {
+            "_id": ObjectId(appointment_id)
+        },
+        {
+            "$set": {
+                "appointment_status": "No Show"
+            }
+        }
+    )
+
+    return {
+        "success": True,
+        "message": "Patient marked as No Show."
     }, 200
