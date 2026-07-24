@@ -9,6 +9,8 @@ import CMSLogin from "./pages/CMSLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import DoctorDashboard from "./pages/DoctorDashboard";
 import StaffDashboard from "./pages/StaffDashboard";
+import StaffQueue from "./pages/StaffQueue";
+import StaffReports from "./pages/StaffReports";
 import UserProfile from "./pages/UserProfile";
 import UserSettings from "./pages/UserSettings";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard";
@@ -188,6 +190,8 @@ function AppContent() {
               element={<DoctorPatientFiles />}
             />
             <Route path="/staff/dashboard" element={<StaffDashboard />} />
+            <Route path="/staff/queue" element={<StaffQueue />} />
+            <Route path="/staff/reports" element={<StaffReports />} />
             <Route
               path="/appointment/:hospitalId"
               element={<AppointmentForm />}
@@ -206,7 +210,7 @@ function AppContent() {
                 />
               }
             />
-            <Route path="//appointment/:id/live" element={<LiveQueue />} />
+            <Route path="/appointment/:id/live" element={<LiveQueue />} /> 
             <Route path="/appointments" element={<PatientAppointment />} />
             <Route path="/reports" element={<PatientReport />} />
           </Routes>

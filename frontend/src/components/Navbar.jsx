@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useLocation } from "react-router-dom";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../services/api";
@@ -31,7 +31,9 @@ const Navbar = ({ isLoggedIn, setIsLoggedIn, user }) => {
       "Staff": "/admin/staff",
       "Patients": "/admin/patients",
       "Appointments": "/doctor/appointments",
-      "Patient Files": "/doctor/patient-files"
+      "Patient Files": "/doctor/patient-files",
+      "Queue": "/staff/queue",
+      "Reports": "/staff/reports"
     };
 
     return path === tabPathMap[tabName] || (tabName === "Dashboard" && path.includes("dashboard"));
@@ -49,7 +51,7 @@ const Navbar = ({ isLoggedIn, setIsLoggedIn, user }) => {
   } else if (role === "doctor") {
     tabs = ["Dashboard", "Appointments", "Patient Files"];
   } else if (role === "staff") {
-    tabs = ["Dashboard", "Appointments"];
+    tabs = ["Dashboard", "Queue","Reports"];
   } else {
     tabs = ["Home", "My Appointments", "My Reports"];
   }
@@ -95,7 +97,8 @@ const Navbar = ({ isLoggedIn, setIsLoggedIn, user }) => {
     } else if (role === "staff") {
       switch (tab) {
         case "Dashboard": navigate("/staff/dashboard"); break;
-        case "Appointments": navigate("/staff/appointments"); break;
+        case "Queue": navigate("/staff/queue"); break;
+        case "Reports": navigate("/staff/reports"); break;
         default: navigate("/staff/dashboard");
       }
     } else {
