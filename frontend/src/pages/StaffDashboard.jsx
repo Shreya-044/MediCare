@@ -1,15 +1,10 @@
 import { useState } from "react";
-import { 
-  FiUsers, FiClock, FiCalendar, FiDollarSign, 
-  FiLogIn, FiLogOut, FiTrendingUp 
-} from "react-icons/fi";
+import { FiUsers, FiClock, FiCalendar, FiDollarSign } from "react-icons/fi";
 
 export default function StaffDashboard() {
   const [activeTab, setActiveTab] = useState("Queue");
-  
   const baseSalary = 25000;
   const flatDeduction = 50; 
-
   const [doctors] = useState([
     { id: 1, name: "Dr. Rajesh Sharma", queue: [{ id: 101, name: "Mukesh Jaswant", status: "Visiting" }] },
     { id: 2, name: "Dr. Anita Verma", queue: [{ id: 201, name: "Leela Jeswal", status: "Visiting" }] }
@@ -51,8 +46,6 @@ export default function StaffDashboard() {
   const submitLeave = (e) => {
     e.preventDefault();
     const isFull = newLeave.type === "Full";
-    
-    // Check allowance
     if ((isFull && leaveAllowance.full > 0) || (!isFull && leaveAllowance.half > 0)) {
       setLeaveRequests([...leaveRequests, { ...newLeave, id: Date.now(), status: "Pending" }]);
       setLeaveAllowance(prev => ({
@@ -65,14 +58,11 @@ export default function StaffDashboard() {
     }
   };
 
-  // Logic: Deductions apply only if leave allowance is 0 or status is not On Time
   const attendanceDeductions = dailyLogs.filter(l => l.status !== "On Time").length * flatDeduction;
   const leaveDeductions = (leaveAllowance.full < 0 || leaveAllowance.half < 0) ? flatDeduction : 0;
   const totalDeductions = attendanceDeductions + leaveDeductions;
-  
   const finalSalary = baseSalary - totalDeductions;
   const selectedDoctor = doctors.find(d => d.id === selectedDoctorId);
-
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
   const minDate = tomorrow.toISOString().split("T")[0];
@@ -94,7 +84,7 @@ export default function StaffDashboard() {
         ))}
       </div>
 
-      <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm min-h-[400px]">
+      <div className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm min-h-100">
         {activeTab === "Queue" && (
           <div>
             <select className="w-full p-4 mb-6 rounded-2xl border border-gray-200 font-bold text-sm" onChange={(e) => setSelectedDoctorId(Number(e.target.value))}>
